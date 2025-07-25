@@ -20,6 +20,7 @@
         "@types/bun": "latest",
       },
       "peerDependencies": {
+        "store": "workspace:*",
         "typescript": "^5",
       },
     },

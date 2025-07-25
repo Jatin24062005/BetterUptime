@@ -1,12 +1,21 @@
 import express from "express";
 import dotenv from "dotenv";
+import { prisma } from "store"
 
 dotenv.config();
 
 const app = express();
 
 app.post("/website", async (req,res) => {
-  res.send("Received a POST request");
+  const website = await prisma.website.create({
+    data: { url : req.body.url ,
+      timeAdded: new Date(),
+    }
+  }); 
+  res.status(201).json({
+    message: "Website created successfully",
+    id: website.id,
+  });
 });
 
 app.get("/status/:websiteId", (req, res) => {

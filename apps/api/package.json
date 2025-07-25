@@ -7,7 +7,8 @@
     "@types/bun": "latest"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5",
+    "store": "workspace:*"
   },
   "dependencies": {
     "@types/express": "^5.0.3",
