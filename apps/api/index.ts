@@ -6,10 +6,12 @@ import jwt from "jsonwebtoken";
 import { authMiddleware } from "./middlware/middleware";
 import { ExitStatus } from "typescript";
 import { startTransition } from "react";
+import { safeParse } from "zod";
 
 dotenv.config();
 
 const app = express();
+app.use(express.json())
 
 app.post("/website", authMiddleware, async (req, res) => {
   if(!req.body.url){
@@ -105,15 +107,16 @@ app.post("/user/signup", async (req, res) => {
   }
 });
 
-app.post("user/signin", async (req, res) => {
-  const data = req.body;
+app.post("/user/signin", async (req, res) => {
+  const data = AuthInput.safeParse(req.body);
+
   if (!data.success) {
     res.status(400).json({
       status: "failed",
       message: "Credential Requires !",
     });
   }
-  const { username, password } = data.data;
+  const { username, password } = data.data!;
   const user = await prismaClient.user.findFirst({
     where: {
       username: username,
