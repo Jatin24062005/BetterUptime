@@ -7,11 +7,14 @@ import { authMiddleware } from "./middlware/middleware";
 import { ExitStatus } from "typescript";
 import { startTransition } from "react";
 import { safeParse } from "zod";
+import cors from "cors"
+
 
 dotenv.config();
 
 const app = express();
 app.use(express.json())
+app.use(cors())
 
 app.post("/website", authMiddleware, async (req, res) => {
   if(!req.body.url){
