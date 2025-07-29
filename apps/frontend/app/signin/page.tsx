@@ -1,76 +1,94 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Eye, EyeOff, Github, Mail, Lock, ArrowRight, ArrowLeft } from "lucide-react"
-import { toast } from "sonner"
-import axios from "axios"
-import { BACKEND_URL } from "@/lib/utils"
-import { useRouter } from "next/navigation"
-import Cookies from 'js-cookie'
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Eye,
+  EyeOff,
+  Github,
+  Mail,
+  Lock,
+  ArrowRight,
+  ArrowLeft,
+} from "lucide-react";
+import { toast } from "sonner";
+import axios from "axios";
+import { BACKEND_URL } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
 
 export default function SignInPage() {
-  const [showPassword, setShowPassword] = useState(false)
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     remember: false,
-  })
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
 
     // Simulate API call
     try {
-      const response = await axios.post(`${BACKEND_URL}/user/signin`,{
-        username:formData.email,
-        password:formData.password
-      })
+      const response = await axios.post(`${BACKEND_URL}/user/signin`, {
+        username: formData.email,
+        password: formData.password,
+      });
 
-      toast.success("SignIn  Successfully !",{
+      toast.success("SignIn  Successfully !", {
         description: "Welcome Back  to the BetterUptime ",
       });
       const token = response.data.token;
 
-      if(formData.remember){
-        Cookies.set('token', token,{
-          expires: 1
-        })
+      if (formData.remember) {
+        Cookies.set("token", token, {
+          expires: 1,
+        });
+      } else {
+        Cookies.set("token", token, {
+          // ⬇️ security / scope
+          path: "/", // send on every route
+          sameSite: "lax", // or 'strict' / 'none' (if cross‑site over HTTPS)
+          secure: true, // true as long as your site is served over HTTPS
+        });
       }
-      router.push('/dashboard');
+      router.push("/dashboard");
 
-      
-      console.log("Response From SignIn Successfully : ",response);
-      
+      console.log("Response From SignIn Successfully : ", response);
     } catch (error) {
-       console.log("SignIn failed: ",error);
-       toast.error("SignIn failed !");
+      console.log("SignIn failed: ", error);
+      toast.error("SignIn failed !");
     }
 
-
-    setIsLoading(false)
+    setIsLoading(false);
     // Redirect to dashboard or home
-  }
+  };
 
   const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
-  useEffect(()=>{
-    const token = Cookies.get("token")
-    if(token){
-      router.push('/dashboard')
+  useEffect(() => {
+    const token = Cookies.get("token");
+    if (token) {
+      router.push("/dashboard");
     }
-  },[])
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#0f1419] relative overflow-hidden">
@@ -140,20 +158,26 @@ export default function SignInPage() {
                     <div className="w-4 h-4 bg-white rounded-sm"></div>
                   </div>
                 </div>
-                <span className="text-2xl font-bold text-white">BetterUptime</span>
+                <span className="text-2xl font-bold text-white">
+                  BetterUptime
+                </span>
               </div>
 
-              <CardTitle className="text-3xl font-bold text-white mb-2">Welcome back</CardTitle>
+              <CardTitle className="text-3xl font-bold text-white mb-2">
+                Welcome back
+              </CardTitle>
               <CardDescription className="text-gray-400 text-lg">
                 Sign in to your account to continue monitoring
               </CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-6">
-       
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-gray-300 text-sm font-medium">
+                  <Label
+                    htmlFor="email"
+                    className="text-gray-300 text-sm font-medium"
+                  >
                     Email address
                   </Label>
                   <div className="relative">
@@ -163,7 +187,9 @@ export default function SignInPage() {
                       type="email"
                       placeholder="Enter your email"
                       value={formData.email}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("email", e.target.value)
+                      }
                       className="pl-11 h-12 bg-[#0f1419] border-gray-700 text-white placeholder-gray-500 focus:border-[#6366f1] focus:ring-[#6366f1] transition-all"
                       required
                       disabled={isLoading}
@@ -172,7 +198,10 @@ export default function SignInPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-gray-300 text-sm font-medium">
+                  <Label
+                    htmlFor="password"
+                    className="text-gray-300 text-sm font-medium"
+                  >
                     Password
                   </Label>
                   <div className="relative">
@@ -182,7 +211,9 @@ export default function SignInPage() {
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
                       value={formData.password}
-                      onChange={(e) => handleInputChange("password", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("password", e.target.value)
+                      }
                       className="pl-11 pr-11 h-12 bg-[#0f1419] border-gray-700 text-white placeholder-gray-500 focus:border-[#6366f1] focus:ring-[#6366f1] transition-all"
                       required
                       disabled={isLoading}
@@ -193,7 +224,11 @@ export default function SignInPage() {
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
                       disabled={isLoading}
                     >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -204,7 +239,9 @@ export default function SignInPage() {
                       id="remember"
                       type="checkbox"
                       checked={formData.remember}
-                      onChange={(e) => handleInputChange("remember", e.target.checked)}
+                      onChange={(e) =>
+                        handleInputChange("remember", e.target.checked)
+                      }
                       className="w-4 h-4 text-[#6366f1] bg-[#0f1419] border-gray-700 rounded focus:ring-[#6366f1] focus:ring-2"
                       disabled={isLoading}
                     />
@@ -241,7 +278,9 @@ export default function SignInPage() {
 
               {/* Switch to Sign Up */}
               <div className="text-center pt-4 border-t border-gray-800">
-                <span className="text-gray-400 text-sm">Don't have an account? </span>
+                <span className="text-gray-400 text-sm">
+                  Don't have an account?{" "}
+                </span>
                 <Link
                   href="/signup"
                   className="text-[#6366f1] hover:text-[#5855eb] text-sm font-medium transition-colors"
@@ -272,5 +311,5 @@ export default function SignInPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

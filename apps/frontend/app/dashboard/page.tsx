@@ -51,6 +51,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import axios from "axios";
 import { BACKEND_URL } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 const monitors = [
   {
@@ -157,7 +158,15 @@ export default function DashboardPage() {
   const [websiteName, setWebsiteName] = useState("");
   const [monitorType, setMonitorType] = useState("HTTP");
   const [checkInterval, setCheckInterval] = useState("30");
+  const router = useRouter()
+
   const token = Cookies.get("token");
+
+  const handleSignout = async ()=>{
+    Cookies.remove("token");
+    toast.success("SignOut Successfully !");
+    router.push("/");
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -281,7 +290,7 @@ export default function DashboardPage() {
                   Analytics
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-gray-800" />
-                <DropdownMenuItem className="text-gray-300 hover:text-white hover:bg-gray-800">
+                <DropdownMenuItem className="text-gray-300 hover:text-white hover:bg-gray-800" onClick={handleSignout}>
                   <LogOut className="h-4 w-4 mr-2" />
                   Sign out
                 </DropdownMenuItem>

@@ -24,13 +24,46 @@ app.post("/website", authMiddleware, async (req, res) => {
   }
 
   const website = await prismaClient.website.create({
-    data: { url: req.body.url, timeAdded: new Date(),userId :req.userId!},
+    data: { url: req.body.url, timeAdded: new Date(), userId : req.userId!},
   });
   res.status(201).json({
     message: "Website created successfully",
     id: website.id,
   });
 });
+
+
+app.get("/websites", authMiddleware, async (req,res )=>{
+  const userId = req.userId;
+  if(!userId){
+    res.status(400).json({
+      status:"failed",
+      message:"User Not found!"
+    })
+  }
+
+
+  const websites = await prismaClient.website.findFirst({
+    where:{
+      userId:userId
+    }
+  })
+
+  if(!websites){
+    res.status(402).json({
+      status:"success",
+      message:"Website not found for the user !"
+    })
+  }
+
+  res.status(402).json({
+    status:"success",
+    message:"Website  found for the user Successfully !",
+    websites
+  })
+})
+
+
 
 app.get("/status/:websiteId", authMiddleware,async (req, res) => {
   const { websiteId } = req.params;
@@ -139,6 +172,8 @@ app.post("/user/signin", async (req, res) => {
       message: "Incorrect Password!",
     });
   }
+
+  console.log("SignIN JWT Secret :", process.env.JWT_SECRET)
   const token = jwt.sign(
     { id: user?.id, username: user?.username },
     process.env.JWT_SECRET!,

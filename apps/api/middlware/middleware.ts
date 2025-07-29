@@ -13,12 +13,15 @@ export const authMiddleware = async (
   next: NextFunction
 ) => {
   const header = req.headers.authorization!;
+ 
 
   try {
     const decoded = jwt.verify(header, process.env.JWT_SECRET!);
 
-    req.userId = decoded.sub as string;
-    next();
+    if (typeof decoded === "object" && decoded !== null && "id" in decoded) {
+      req.userId = (decoded as { id: string }).id;
+      next();
+    }
   } catch (error) {
     console.error("Auth middleware error:", error);
     return res.status(401).json({
