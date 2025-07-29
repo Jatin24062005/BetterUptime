@@ -43,24 +43,38 @@ app.get("/websites", authMiddleware, async (req,res )=>{
   }
 
 
-  const websites = await prismaClient.website.findFirst({
-    where:{
-      userId:userId
+  const websites = await prismaClient.website.findMany({
+    where: { userId: userId },
+    include: {
+      ticks: {
+        orderBy: [{ createdAt: 'desc' }],
+        take: 1
+      }
     }
-  })
+  });
 
-  if(!websites){
-    res.status(402).json({
-      status:"success",
-      message:"Website not found for the user !"
-    })
+  if (!websites || websites.length === 0) {
+    res.status(404).json({
+      status: "failed",
+      message: "No websites found for the user!"
+    });
+    return;
   }
 
-  res.status(402).json({
-    status:"success",
-    message:"Website  found for the user Successfully !",
-    websites
-  })
+  // Format createdAt fields in ticks
+  const formattedWebsites = websites.map(site => ({
+    ...site,
+    ticks: site.ticks.map(tick => ({
+      ...tick,
+      createdAt: tick.createdAt ? new Date(tick.createdAt).toISOString() : null
+    }))
+  }));
+
+  res.status(200).json({
+    status: "success",
+    message: "Websites found for the user successfully!",
+    websites: formattedWebsites
+  });
 })
 
 

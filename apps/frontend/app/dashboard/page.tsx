@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +52,8 @@ import { toast } from "sonner";
 import axios from "axios";
 import { BACKEND_URL } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { url } from "inspector";
+
 
 const monitors = [
   {
@@ -158,15 +160,16 @@ export default function DashboardPage() {
   const [websiteName, setWebsiteName] = useState("");
   const [monitorType, setMonitorType] = useState("HTTP");
   const [checkInterval, setCheckInterval] = useState("30");
-  const router = useRouter()
+  const router = useRouter();
+  const [websites, setWebsites] = useState();
 
   const token = Cookies.get("token");
 
-  const handleSignout = async ()=>{
+  const handleSignout = async () => {
     Cookies.remove("token");
     toast.success("SignOut Successfully !");
     router.push("/");
-  }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -184,12 +187,13 @@ export default function DashboardPage() {
 
   const getStatusDot = (status: string) => {
     switch (status) {
-      case "up":
+      case "UP":
       case "healthy":
         return "bg-green-500";
       case "down":
         return "bg-red-500";
       case "late":
+        case "checking":
         return "bg-yellow-500";
       default:
         return "bg-gray-500";
@@ -207,17 +211,17 @@ export default function DashboardPage() {
     });
 
     try {
-        const res = await axios.post(
-            `${BACKEND_URL}/website`,
-            { url: websiteUrl }, // <-- This is the data body
-            {
-              headers: {
-                "Content-Type": "application/json",
-                authorization: token,
-              },
-            }
-          );
-          
+      const res = await axios.post(
+        `${BACKEND_URL}/website`,
+        { url: websiteUrl }, // <-- This is the data body
+        {
+          headers: {
+            "Content-Type": "application/json",
+            authorization: token,
+          },
+        }
+      );
+
       console.log("Added Website Response :", res);
       toast.success("Added Website", {
         description: `${websiteName} Added Successfully with Url !`,
@@ -235,9 +239,45 @@ export default function DashboardPage() {
     setIsAddWebsiteOpen(false);
   };
 
-  const filteredMonitors = monitors.filter((monitor) =>
-    monitor.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredWebsites = (websites || []).filter((w) =>
+    w.url.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const fetchWebsites = async () => {
+    try {
+      const res = await axios.get(`${BACKEND_URL}/websites`, {
+        headers: {
+          "Content-Type": "application/json",
+          authorization: token,
+        },
+      });
+
+      const resWebsites = Array.isArray(res.data.websites)
+      ? res.data.websites
+      : Object.values(res.data.websites || {});
+
+    
+      setWebsites(
+        resWebsites.map((w: any) => ({
+          id: w.id,
+          url: w.url,
+          status: w.ticks[0] ? w.tick[0].status : "checking",
+          responseTime: w.ticks[0] ? w.tick[0].responseTime : 0,
+          lastChecked: w.ticks[0]
+            ? new Date(w.ticks[0].createdAt).toLocaleString
+            : Date.now().toLocaleString(),
+        }))
+      );
+      console.log("Website fetched SUccessfully !");
+      console.log("user websites : ", res.data);
+    } catch (e) {
+      console.log("Error while fetching websites : ", e);
+    }
+  };
+
+  useEffect(() => {
+    fetchWebsites();
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#0f1419]">
@@ -290,7 +330,10 @@ export default function DashboardPage() {
                   Analytics
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-gray-800" />
-                <DropdownMenuItem className="text-gray-300 hover:text-white hover:bg-gray-800" onClick={handleSignout}>
+                <DropdownMenuItem
+                  className="text-gray-300 hover:text-white hover:bg-gray-800"
+                  onClick={handleSignout}
+                >
                   <LogOut className="h-4 w-4 mr-2" />
                   Sign out
                 </DropdownMenuItem>
@@ -338,7 +381,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-400 text-sm">Total Monitors</p>
-                    <p className="text-2xl font-bold text-white">4</p>
+                    <p className="text-2xl font-bold text-white">{websites?.length}</p>
                   </div>
                   <Globe className="h-8 w-8 text-blue-400" />
                 </div>
@@ -407,25 +450,25 @@ export default function DashboardPage() {
               <TabsList className="bg-[#1a1f2e] border border-gray-800">
                 <TabsTrigger
                   value="monitors"
-                  className="data-[state=active]:bg-gray-800 data-[state=active]:text-white"
+                  className="data-[state=active]:bg-gray-800 text-gray-400 data-[state=active]:text-white"
                 >
                   <Globe className="h-4 w-4 mr-2" />
                   Monitors
                 </TabsTrigger>
-                <TabsTrigger
+                {/* <TabsTrigger
                   value="heartbeats"
-                  className="data-[state=active]:bg-gray-800 data-[state=active]:text-white"
+                  className="data-[state=active]:bg-gray-800 text-gray-400 data-[state=active]:text-white"
                 >
                   <Clock className="h-4 w-4 mr-2" />
                   Heartbeats
                 </TabsTrigger>
                 <TabsTrigger
                   value="incidents"
-                  className="data-[state=active]:bg-gray-800 data-[state=active]:text-white"
+                  className="data-[state=active]:bg-gray-800 text-gray-400 data-[state=active]:text-white"
                 >
                   <AlertTriangle className="h-4 w-4 mr-2" />
                   Incidents
-                </TabsTrigger>
+                </TabsTrigger> */}
               </TabsList>
 
               <div className="flex items-center space-x-4">
@@ -525,44 +568,45 @@ export default function DashboardPage() {
             </div>
 
             <TabsContent value="monitors" className="space-y-4">
-              {filteredMonitors.map((monitor) => (
+              {filteredWebsites.map((website) => (
                 <Card
-                  key={monitor.id}
+                  key={website.id}
                   className="bg-[#1a1f2e] border-gray-800 hover:border-gray-700 transition-colors"
                 >
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-3">
                         <div
-                          className={`w-3 h-3 rounded-full ${getStatusDot(monitor.status)} animate-pulse`}
+                          className={`w-3 h-3 rounded-full ${getStatusDot(website.status)} animate-pulse`}
                         ></div>
                         <div>
                           <h3 className="text-white font-semibold text-lg">
-                            {monitor.name}
+                            {new URL(website.url).hostname}
                           </h3>
-                          <p className="text-gray-400 text-sm">{monitor.url}</p>
+                          <p className="text-gray-400 text-sm">{website.url}</p>
                         </div>
                         <Badge
                           variant="outline"
                           className="border-gray-700 text-gray-400 text-xs"
                         >
-                          {monitor.type}
+                          HTTP
                         </Badge>
                       </div>
+
                       <div className="flex items-center space-x-4">
                         <div className="text-right">
                           <p
-                            className={`text-sm font-medium ${getStatusColor(monitor.status)}`}
+                            className={`text-sm font-medium ${getStatusColor(website.status)}`}
                           >
-                            {monitor.status === "up"
+                            {website.status === "up"
                               ? "Up"
-                              : monitor.status === "down"
+                              : website.status === "down"
                                 ? "Down"
-                                : "Unknown"}
+                                : "Checking"}
                           </p>
                           <p className="text-gray-400 text-xs">
-                            {monitor.status === "up"
-                              ? `${monitor.responseTime}ms`
+                            {website.status === "up"
+                              ? `${website.responseTime}ms`
                               : "Timeout"}
                           </p>
                         </div>
@@ -580,26 +624,18 @@ export default function DashboardPage() {
                             align="end"
                             className="bg-[#1a1f2e] border-gray-800"
                           >
+                            <Link href={website.url} target="_blank">
                             <DropdownMenuItem className="text-gray-300 hover:text-white hover:bg-gray-800">
-                              <ExternalLink className="h-4 w-4 mr-2" />
+                              <ExternalLink/>
                               Visit Site
-                            </DropdownMenuItem>
+                            </DropdownMenuItem></Link>
                             <DropdownMenuItem className="text-gray-300 hover:text-white hover:bg-gray-800">
                               <BarChart3 className="h-4 w-4 mr-2" />
                               View Analytics
                             </DropdownMenuItem>
                             <DropdownMenuItem className="text-gray-300 hover:text-white hover:bg-gray-800">
-                              <Camera className="h-4 w-4 mr-2" />
-                              Screenshots
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator className="bg-gray-800" />
-                            <DropdownMenuItem className="text-gray-300 hover:text-white hover:bg-gray-800">
                               <Pause className="h-4 w-4 mr-2" />
                               Pause Monitor
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-gray-300 hover:text-white hover:bg-gray-800">
-                              <Settings className="h-4 w-4 mr-2" />
-                              Configure
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -608,62 +644,23 @@ export default function DashboardPage() {
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div>
-                        <p className="text-gray-400">Uptime</p>
-                        <p className="text-white font-medium">
-                          {monitor.uptime}%
-                        </p>
-                      </div>
-                      <div>
                         <p className="text-gray-400">Last Checked</p>
                         <p className="text-white font-medium">
-                          {monitor.lastChecked}
+                          {website.lastChecked}
                         </p>
                       </div>
                       <div>
-                        <p className="text-gray-400">Location</p>
+                        <p className="text-gray-400">Response Time</p>
                         <p className="text-white font-medium">
-                          {monitor.location}
+                          {website.responseTime} ms
                         </p>
                       </div>
                       <div>
-                        <p className="text-gray-400">Incidents</p>
+                        <p className="text-gray-400">Status</p>
                         <p className="text-white font-medium">
-                          {monitor.incidents}
+                          {website.status}
                         </p>
                       </div>
-                    </div>
-
-                    {monitor.status === "down" && (
-                      <div className="mt-4 p-3 bg-red-900/20 border border-red-800 rounded-lg">
-                        <div className="flex items-center space-x-2 text-red-400">
-                          <AlertTriangle className="h-4 w-4" />
-                          <span className="text-sm font-medium">
-                            Alert sent • Screenshot taken • Error logs available
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="mt-4 flex items-center space-x-4 text-sm text-gray-400">
-                      <button className="hover:text-white transition-colors">
-                        ⚠️ Send test alert
-                      </button>
-                      <button className="hover:text-white transition-colors">
-                        📊 View incidents
-                      </button>
-                      <button className="hover:text-white transition-colors">
-                        ⏸️ Pause monitor
-                      </button>
-                      <button className="hover:text-white transition-colors">
-                        ⚙️ Configure
-                      </button>
-                      {monitor.name === "example.com" && (
-                        <div className="ml-auto">
-                          <span className="text-gray-400">
-                            🎥 Cameron is currently on-call
-                          </span>
-                        </div>
-                      )}
                     </div>
                   </CardContent>
                 </Card>
