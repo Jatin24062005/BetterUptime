@@ -144,7 +144,7 @@ export function MonitoringFeatures() {
             </Badge>
             <h3 className="text-3xl sm:text-4xl font-bold text-white mb-6">Screenshots & error logs</h3>
             <p className="text-gray-400 text-lg leading-relaxed mb-8">
-              We record your API's error message and take a
+              We record your API&apos;s error message and take a
               <br />
               screenshot of your website being down so that you
               <br />
@@ -263,7 +263,7 @@ export function MonitoringFeatures() {
                   </div>
                   <div>
                     <div className="text-gray-400 mb-1">Issued By</div>
-                    <div className="text-white font-mono">Let's Encrypt</div>
+                    <div className="text-white font-mono">Let&apos;s Encrypt</div>
                   </div>
                   <div>
                     <div className="text-gray-400 mb-1">Valid From</div>

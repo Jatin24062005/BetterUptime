@@ -292,7 +292,7 @@ export function Pricing() {
               <div>
                 <h4 className="text-white font-semibold mb-2">What happens to my data?</h4>
                 <p className="text-gray-400 text-sm">
-                  Your monitoring data is retained according to your plan's data retention policy. We never delete data
+                  Your monitoring data is retained according to your plan&apos;s data retention policy. We never delete data
                   without notice.
                 </p>
               </div>

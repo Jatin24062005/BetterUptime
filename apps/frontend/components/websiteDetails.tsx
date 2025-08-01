@@ -116,9 +116,22 @@ const recentIncidents = [
   },
 ]
 
+type ResponseTimeData = {
+  time: string
+  responseTime: number
+  uptime: number
+  hour: number
+}
+
+type UptimeData = {
+  date: string
+  uptime: number
+  day: number
+}
+
 export default function WebsiteDetailsPage() {
-  const [responseTimeData, setResponseTimeData] = useState<any[]>([])
-  const [uptimeData, setUptimeData] = useState<any[]>([])
+  const [responseTimeData, setResponseTimeData] = useState<ResponseTimeData[]>([])
+  const [uptimeData, setUptimeData] = useState<UptimeData[]>([])
   const [timeRange, setTimeRange] = useState("24h")
 
   useEffect(() => {

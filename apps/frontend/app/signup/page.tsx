@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Eye, EyeOff, Github, Mail, Lock, User, ArrowRight, ArrowLeft, CheckCircle } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, User, ArrowRight, ArrowLeft, CheckCircle } from "lucide-react"
 import axios from "axios"
 import { BACKEND_URL } from "@/lib/utils"
 import { toast } from "sonner"
@@ -76,9 +76,9 @@ export default function SignUpPage() {
   useEffect(()=>{
     const token = Cookies.get("token")
     if(token){
-      router.push('/dashoboard')
+      router.push('/dashboard')
     }
-  },[])
+  },[router])
 
   return (
     <div className="min-h-screen bg-[#0f1419] relative overflow-hidden">

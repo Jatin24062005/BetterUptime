@@ -43,7 +43,7 @@ export function HowItWorks() {
         <div className="text-center mb-16">
           <h2 className="text-4xl sm:text-5xl font-bold mb-6">How It Works</h2>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Get started with website monitoring in minutes. Our simple 4-step process ensures you're protected from the
+            Get started with website monitoring in minutes. Our simple 4-step process ensures you&apos;re protected from the
             moment you sign up.
           </p>
         </div>

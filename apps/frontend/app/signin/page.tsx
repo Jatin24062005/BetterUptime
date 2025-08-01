@@ -17,7 +17,6 @@ import {
 import {
   Eye,
   EyeOff,
-  Github,
   Mail,
   Lock,
   ArrowRight,
@@ -88,7 +87,7 @@ export default function SignInPage() {
     if (token) {
       router.push("/dashboard");
     }
-  }, []);
+  }, [router]);
 
   return (
     <div className="min-h-screen bg-[#0f1419] relative overflow-hidden">
@@ -279,7 +278,7 @@ export default function SignInPage() {
               {/* Switch to Sign Up */}
               <div className="text-center pt-4 border-t border-gray-800">
                 <span className="text-gray-400 text-sm">
-                  Don't have an account?{" "}
+                Don&apos;t have an account?{" "}
                 </span>
                 <Link
                   href="/signup"

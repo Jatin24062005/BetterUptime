@@ -1,6 +1,7 @@
 import { Star, Quote } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import Image from "next/image"
 
 const testimonials = [
   {
@@ -19,7 +20,7 @@ const testimonials = [
     company: "StartupXYZ",
     avatar: "/placeholder.svg?height=60&width=60",
     content:
-      "We switched from our previous monitoring solution and couldn't be happier. The SSL certificate monitoring alone has saved us from multiple outages. The team collaboration features make incident response much smoother.",
+                  "We switched from our previous monitoring solution and couldn&apos;t be happier. The SSL certificate monitoring alone has saved us from multiple outages. The team collaboration features make incident response much smoother.",
     rating: 5,
     featured: false,
   },
@@ -75,8 +76,8 @@ export function Testimonials() {
           </Badge>
           <h2 className="text-4xl sm:text-5xl font-bold mb-6 text-white">Trusted by developers worldwide</h2>
           <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            Don't just take our word for it. Here's what developers and teams are saying about our monitoring platform
-            and how it's helping them build more reliable systems.
+            Don&apos;t just take our word for it. Here&apos;s what developers and teams are saying about our monitoring platform
+            and how it&apos;s helping them build more reliable systems.
           </p>
         </div>
 
@@ -101,9 +102,11 @@ export function Testimonials() {
                 </div>
 
                 <div className="flex items-center space-x-4">
-                  <img
+                  <Image
                     src={testimonial.avatar || "/placeholder.svg"}
                     alt={testimonial.name}
+                    width={48}
+                    height={48}
                     className="w-12 h-12 rounded-full object-cover border-2 border-gray-700"
                   />
                   <div>

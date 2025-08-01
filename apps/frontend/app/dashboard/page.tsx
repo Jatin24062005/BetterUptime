@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +24,6 @@ import {
   Activity,
   AlertTriangle,
   CheckCircle,
-  Clock,
   Settings,
   Pause,
   BarChart3,
@@ -33,7 +32,6 @@ import {
   LogOut,
   ChevronDown,
   ExternalLink,
-  Camera,
   Zap,
   TrendingUp,
   TrendingDown,
@@ -52,59 +50,6 @@ import { toast } from "sonner";
 import axios from "axios";
 import { BACKEND_URL } from "@/lib/utils";
 import { useRouter } from "next/navigation";
-import { url } from "inspector";
-
-
-const monitors = [
-  {
-    id: 1,
-    name: "example.com",
-    url: "https://example.com",
-    status: "up",
-    responseTime: 124,
-    uptime: 99.97,
-    lastChecked: "2 minutes ago",
-    location: "US East",
-    type: "HTTP",
-    incidents: 0,
-  },
-  {
-    id: 2,
-    name: "api.example.com",
-    url: "https://api.example.com/health",
-    status: "up",
-    responseTime: 89,
-    uptime: 99.99,
-    lastChecked: "1 minute ago",
-    location: "EU West",
-    type: "API",
-    incidents: 0,
-  },
-  {
-    id: 3,
-    name: "staging.example.com",
-    url: "https://staging.example.com",
-    status: "down",
-    responseTime: 0,
-    uptime: 98.45,
-    lastChecked: "5 minutes ago",
-    location: "US West",
-    type: "HTTP",
-    incidents: 2,
-  },
-  {
-    id: 4,
-    name: "cdn.example.com",
-    url: "https://cdn.example.com",
-    status: "up",
-    responseTime: 45,
-    uptime: 99.95,
-    lastChecked: "30 seconds ago",
-    location: "Global",
-    type: "CDN",
-    incidents: 0,
-  },
-];
 
 const heartbeats = [
   {
@@ -151,6 +96,25 @@ const recentIncidents = [
     timestamp: "1 hour ago",
   },
 ];
+type Website = {
+  id: string;
+  url: string;
+  status: string;
+  responseTime: number;
+  lastChecked: string;
+};
+
+type Tick = {
+  status: string;
+  responseTime: number;
+  createdAt: string;
+};
+
+type ApiWebsite = {
+  id: string;
+  url: string;
+  ticks?: Tick[] | Tick;
+};
 
 export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -161,7 +125,7 @@ export default function DashboardPage() {
   const [monitorType, setMonitorType] = useState("HTTP");
   const [checkInterval, setCheckInterval] = useState("30");
   const router = useRouter();
-  const [websites, setWebsites] = useState();
+  const [websites, setWebsites] = useState<Website[]>([]);
 
   const token = Cookies.get("token");
 
@@ -193,7 +157,7 @@ export default function DashboardPage() {
       case "down":
         return "bg-red-500";
       case "late":
-        case "checking":
+      case "checking":
         return "bg-yellow-500";
       default:
         return "bg-gray-500";
@@ -221,14 +185,14 @@ export default function DashboardPage() {
           },
         }
       );
-      fetchWebsites()
+      fetchWebsites();
 
       console.log("Added Website Response :", res);
       toast.success("Added Website", {
         description: `${websiteName} Added Successfully with Url !`,
       });
-    } catch (error) {
-      console.log("Failed to Add Website !");
+    } catch (e) {
+      console.log("Failed to Add Website !", e);
       toast.error("Something went wrong!");
     }
 
@@ -244,7 +208,7 @@ export default function DashboardPage() {
     w.url.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const fetchWebsites = async () => {
+  const fetchWebsites = useCallback(async () => {
     try {
       const res = await axios.get(`${BACKEND_URL}/websites`, {
         headers: {
@@ -254,44 +218,47 @@ export default function DashboardPage() {
       });
 
       const resWebsites = Array.isArray(res.data.websites)
-      ? res.data.websites
-      : Object.values(res.data.websites || {});
+        ? res.data.websites
+        : Object.values(res.data.websites || {});
 
-      console.log("Res website ",resWebsites);
+      console.log("Res website ", resWebsites);
 
-      setWebsites(
-        resWebsites.map((w: any) => {
-          const ticks = Array.isArray(w.ticks) ? w.ticks : w.ticks ? [w.ticks] : [];
-          const firstTick = ticks[0];
-      
-          return {
-            id: w.id,
-            url: w.url,
-            status: firstTick?.status || "checking",
-            responseTime: firstTick?.responseTime || 0,
-            lastChecked: firstTick?.createdAt
-              ? new Date(firstTick.createdAt).toLocaleString()
-              : new Date().toLocaleString(),
-          };
-        })
-      );
-      
+             setWebsites(
+         resWebsites.map((w: ApiWebsite) => {
+           const ticks = Array.isArray(w.ticks)
+             ? w.ticks
+             : w.ticks
+               ? [w.ticks]
+               : [];
+           const firstTick = ticks[0];
+
+           return {
+             id: w.id,
+             url: w.url,
+             status: firstTick?.status || "checking",
+             responseTime: firstTick?.responseTime || 0,
+             lastChecked: firstTick?.createdAt
+               ? new Date(firstTick.createdAt).toLocaleString()
+               : new Date().toLocaleString(),
+           };
+         })
+       );
+
       console.log("Website fetched SUccessfully !");
       console.log("user websites : ", res.data);
     } catch (e) {
       console.log("Error while fetching websites : ", e);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       fetchWebsites();
     }, 1000); // runs every 1 second
-  
+
     // Cleanup the interval when component unmounts
     return () => clearInterval(interval);
-  }, []);
-  
+  }, [fetchWebsites]);
 
   return (
     <div className="min-h-screen bg-[#0f1419]">
@@ -395,7 +362,9 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-400 text-sm">Total Monitors</p>
-                    <p className="text-2xl font-bold text-white">{websites?.length}</p>
+                    <p className="text-2xl font-bold text-white">
+                      {websites?.length}
+                    </p>
                   </div>
                   <Globe className="h-8 w-8 text-blue-400" />
                 </div>
@@ -511,8 +480,8 @@ export default function DashboardPage() {
                         Add New Website Monitor
                       </DialogTitle>
                       <DialogDescription className="text-gray-400">
-                        Enter the details for your new website monitor. We'll
-                        start checking it immediately.
+                        Enter the details for your new website monitor.
+                        We&apos;ll start checking it immediately.
                       </DialogDescription>
                     </DialogHeader>
 
@@ -595,10 +564,12 @@ export default function DashboardPage() {
                         ></div>
                         <div>
                           <Link href={`/website/${website.id}`}>
-                          <h3 className="text-white font-semibold text-lg">
-                            {new URL(website.url).hostname }
-                          </h3>
-                          <p className="text-gray-400 text-sm">{website.url}</p>
+                            <h3 className="text-white font-semibold text-lg">
+                              {new URL(website.url).hostname}
+                            </h3>
+                            <p className="text-gray-400 text-sm">
+                              {website.url}
+                            </p>
                           </Link>
                         </div>
                         <Badge
@@ -641,16 +612,17 @@ export default function DashboardPage() {
                             className="bg-[#1a1f2e] border-gray-800"
                           >
                             <Link href={website.url} target="_blank">
-                            <DropdownMenuItem className="text-gray-300 hover:text-white hover:bg-gray-800">
-                              <ExternalLink/>
-                              Visit Site
-                            </DropdownMenuItem></Link>
+                              <DropdownMenuItem className="text-gray-300 hover:text-white hover:bg-gray-800">
+                                <ExternalLink />
+                                Visit Site
+                              </DropdownMenuItem>
+                            </Link>
                             <Link href={`/website/${website.id}`}>
-
-                            <DropdownMenuItem className="text-gray-300 hover:text-white hover:bg-gray-800">
-                              <BarChart3 className="h-4 w-4 mr-2" />
-                              View Analytics
-                            </DropdownMenuItem></Link>
+                              <DropdownMenuItem className="text-gray-300 hover:text-white hover:bg-gray-800">
+                                <BarChart3 className="h-4 w-4 mr-2" />
+                                View Analytics
+                              </DropdownMenuItem>
+                            </Link>
                             <DropdownMenuItem className="text-gray-300 hover:text-white hover:bg-gray-800">
                               <Pause className="h-4 w-4 mr-2" />
                               Pause Monitor

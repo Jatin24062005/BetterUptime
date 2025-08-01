@@ -88,7 +88,7 @@ export function FAQ() {
           </Badge>
           <h2 className="text-4xl sm:text-5xl font-bold mb-6 text-white">Frequently asked questions</h2>
           <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            Got questions? We've got answers. Here are the most common questions about our website monitoring platform,
+            Got questions? We&apos;ve got answers. Here are the most common questions about our website monitoring platform,
             features, and pricing.
           </p>
         </div>
@@ -146,7 +146,7 @@ export function FAQ() {
           <div className="bg-[#1a1f2e] border border-gray-800 rounded-lg p-8 max-w-2xl mx-auto">
             <h3 className="text-2xl font-bold text-white mb-4">Still have questions?</h3>
             <p className="text-gray-400 mb-6">
-              Our support team is here to help you get the most out of our monitoring platform. Get in touch and we'll
+              Our support team is here to help you get the most out of our monitoring platform. Get in touch and we&apos;ll
               respond within 24 hours.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

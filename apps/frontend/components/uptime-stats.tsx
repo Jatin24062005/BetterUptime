@@ -5,6 +5,12 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } fro
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 
+type UptimeData = {
+  date: string
+  uptime: number
+  responseTime: number
+}
+
 // Generate realistic uptime data for the last 30 days
 const generateUptimeData = () => {
   const data = []
@@ -27,8 +33,8 @@ const generateUptimeData = () => {
 }
 
 export function UptimeStats() {
-  const [uptimeData, setUptimeData] = useState<any[]>([])
-  const [responseTimeData, setResponseTimeData] = useState<any[]>([])
+  const [uptimeData, setUptimeData] = useState<UptimeData[]>([])
+  const [responseTimeData, setResponseTimeData] = useState<UptimeData[]>([])
 
   useEffect(() => {
     const data = generateUptimeData()
@@ -53,7 +59,7 @@ export function UptimeStats() {
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">Real-time monitoring insights</h2>
           <p className="text-xl text-gray-400 max-w-3xl mx-auto">
             Track your website performance with detailed analytics and historical data. See exactly when issues occur
-            and how quickly they're resolved.
+            and how quickly they&apos;re resolved.
           </p>
         </div>
 

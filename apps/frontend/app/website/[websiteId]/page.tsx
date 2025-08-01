@@ -1,24 +1,21 @@
-// /app/website/[websiteId]/page.tsx
+// app/website/[websiteId]/page.tsx
 import WebsiteDetailsPage from '@/components/websiteDetails';
 import React from 'react';
 
-interface Props {
-  params: {
+// ✅ Correct type signature for Next.js 15
+interface PageProps {
+  params: Promise<{
     websiteId: string;
-  };
+  }>;
 }
 
-const WebsitePage = async ({ params }: Props) => {
-  const { websiteId } = params;
-
-  // Fetch your data here (optional)
-  // const website = await fetchWebsite(websiteId);
+const WebsitePage = async ({ params }: PageProps) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { websiteId: _websiteId } = await params;
 
   return (
     <div>
-      {/* render data here */}
-
-      <WebsiteDetailsPage/>
+      <WebsiteDetailsPage />
     </div>
   );
 };
