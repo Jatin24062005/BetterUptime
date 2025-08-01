@@ -1,9 +1,12 @@
 import axios from "axios";
 import { xAck, xReadGroup } from "redisStream";
 import { prismaClient } from "store";
+import { WebsiteStatus } from "store/generated/prisma/client";
 
 const WORKER_ID = process.env.WORKER_ID || "india-2";
-const REGION_ID = process.env.REGION_ID || "india";
+const REGION_ID = process.env.REGION_ID || "2005";
+
+
 
 async function main() {
 
@@ -12,11 +15,7 @@ async function main() {
 const response = await xReadGroup(REGION_ID, WORKER_ID);
     console.log("response ReadGroup from worker:", response);
 
-    if (!response || response.length === 0) {
-      console.log("No new messages");
-      return;
-    }
-
+   
     await Promise.all(
       response.map(async ({ id, message }: any) => {
         try {
@@ -27,26 +26,56 @@ const response = await xReadGroup(REGION_ID, WORKER_ID);
           const status = await axios.get(url);
           const endTime = Date.now();
 
-          await prismaClient.websiteTick.create({
+
+
+
+          await prismaClient.region.upsert({
+            where: { id: REGION_ID },
+            update: {},
+            create: { id: REGION_ID, name: "us" },
+          });
+
+
+        
+              const prismares =   await prismaClient.websiteTick.create({
             data: {
               responseTime: endTime - startTime,
-              status: "UP",
+              status: WebsiteStatus.UP,
               regionId: REGION_ID,
               websiteId: websiteId,
             },
           });
 
-          console.log(`✅ Website ${status} is UP!`);
-        } catch (err) {
-          console.error("❌ Failed to reach website:", err);
+     
+          
+
+          console.log(`✅ Website  is UP!`,prismares);
+
+        } catch (err: any) {
+          if (err instanceof Error) {
+            console.error("❌ Website processing error:", {
+              message: err.message,
+              stack: err.stack,
+              prismaError: err,
+            });
+          } else {
+            console.error("❌ Non-standard error:", err);
+          }
         }
+        
       })
     );
 
-    await xAck(REGION_ID, response.map(({id})=>id));
+    // Acknowledge each message individually
+    for (let { id } of response) {
+
+      await xAck(REGION_ID.toString(), id.toString() );
+    }
+
   } catch (err) {
     console.error("❌ Error in main function:", err);
   }
-}};
+}
+};
 
 main();

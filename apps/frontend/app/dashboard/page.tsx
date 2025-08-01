@@ -221,6 +221,7 @@ export default function DashboardPage() {
           },
         }
       );
+      fetchWebsites()
 
       console.log("Added Website Response :", res);
       toast.success("Added Website", {
@@ -256,18 +257,25 @@ export default function DashboardPage() {
       ? res.data.websites
       : Object.values(res.data.websites || {});
 
-    
+      console.log("Res website ",resWebsites);
+
       setWebsites(
-        resWebsites.map((w: any) => ({
-          id: w.id,
-          url: w.url,
-          status: w.ticks[0] ? w.tick[0].status : "checking",
-          responseTime: w.ticks[0] ? w.tick[0].responseTime : 0,
-          lastChecked: w.ticks[0]
-            ? new Date(w.ticks[0].createdAt).toLocaleString
-            : Date.now().toLocaleString(),
-        }))
+        resWebsites.map((w: any) => {
+          const ticks = Array.isArray(w.ticks) ? w.ticks : w.ticks ? [w.ticks] : [];
+          const firstTick = ticks[0];
+      
+          return {
+            id: w.id,
+            url: w.url,
+            status: firstTick?.status || "checking",
+            responseTime: firstTick?.responseTime || 0,
+            lastChecked: firstTick?.createdAt
+              ? new Date(firstTick.createdAt).toLocaleString()
+              : new Date().toLocaleString(),
+          };
+        })
       );
+      
       console.log("Website fetched SUccessfully !");
       console.log("user websites : ", res.data);
     } catch (e) {
@@ -276,8 +284,14 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    fetchWebsites();
+    const interval = setInterval(() => {
+      fetchWebsites();
+    }, 1000); // runs every 1 second
+  
+    // Cleanup the interval when component unmounts
+    return () => clearInterval(interval);
   }, []);
+  
 
   return (
     <div className="min-h-screen bg-[#0f1419]">
@@ -580,10 +594,12 @@ export default function DashboardPage() {
                           className={`w-3 h-3 rounded-full ${getStatusDot(website.status)} animate-pulse`}
                         ></div>
                         <div>
+                          <Link href={`/website/${website.id}`}>
                           <h3 className="text-white font-semibold text-lg">
-                            {new URL(website.url).hostname}
+                            {new URL(website.url).hostname }
                           </h3>
                           <p className="text-gray-400 text-sm">{website.url}</p>
+                          </Link>
                         </div>
                         <Badge
                           variant="outline"
@@ -629,10 +645,12 @@ export default function DashboardPage() {
                               <ExternalLink/>
                               Visit Site
                             </DropdownMenuItem></Link>
+                            <Link href={`/website/${website.id}`}>
+
                             <DropdownMenuItem className="text-gray-300 hover:text-white hover:bg-gray-800">
                               <BarChart3 className="h-4 w-4 mr-2" />
                               View Analytics
-                            </DropdownMenuItem>
+                            </DropdownMenuItem></Link>
                             <DropdownMenuItem className="text-gray-300 hover:text-white hover:bg-gray-800">
                               <Pause className="h-4 w-4 mr-2" />
                               Pause Monitor
