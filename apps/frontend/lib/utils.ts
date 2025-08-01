@@ -5,4 +5,4 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const BACKEND_URL ="http://localhost:8000"
+export const BACKEND_URL ="http://localhost:4000"
