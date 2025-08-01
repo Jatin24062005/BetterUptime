@@ -6,8 +6,11 @@
   "dependencies": {
     "redisStream": "*"
   },  
+  "scripts": {
+    "dev": "bun index.ts"
+  },
   "devDependencies": {
-    "@types/bun": "latest",
+    "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
