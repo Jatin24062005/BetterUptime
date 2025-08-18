@@ -1,15 +1,14 @@
-
 services:
   redis:
     image: redis:latest
     ports:
       - "6379:6379"
 
- 
   frontend:
     build:
       context: .
-      dockerfile: apps/frontend/Dockerfile
+      dockerfile: Dockerfile
+      target: frontend
     ports:
       - "3000:3000"
     depends_on:
@@ -18,7 +17,8 @@ services:
   api:
     build:
       context: .
-      dockerfile: apps/api/Dockerfile
+      dockerfile: Dockerfile
+      target: api
     ports:
       - "4000:4000"
     depends_on:
@@ -27,7 +27,8 @@ services:
   worker:
     build:
       context: .
-      dockerfile: apps/api/worker/Dockerfile
+      dockerfile: Dockerfile
+      target: worker
     environment:
       WORKER_ID: "india-2"
       REGION_ID: "2005"
@@ -37,9 +38,8 @@ services:
   pusher:
     build:
       context: .
-      dockerfile: apps/api/pusher/Dockerfile
+      dockerfile: Dockerfile
+      target: pusher
     depends_on:
       - redis
 
-volumes:
-  pgdata:
