@@ -42,6 +42,7 @@ CMD ["bun", "run", "dev"]
 FROM base AS frontend
 WORKDIR /app/apps/frontend
 CMD ["bun", "run", "dev"]
+Expose 3000
 
 
 

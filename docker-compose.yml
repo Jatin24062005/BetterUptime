@@ -1,45 +1,45 @@
+version: "3.9"
 services:
   redis:
     image: redis:latest
+    container_name: redis_service
     ports:
       - "6379:6379"
 
+  api:
+    build: ./   # path to your API Dockerfile
+    container_name: api_service
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+
   frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: frontend
+    build: ./   # path to your frontend Dockerfile
+    container_name: frontend_service
     ports:
       - "3000:3000"
     depends_on:
       - api
 
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: api
-    ports:
-      - "4000:4000"
-    depends_on:
-      - redis
-
   worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: worker
-    environment:
-      WORKER_ID: "india-2"
-      REGION_ID: "2005"
+    build: ./   # path to your worker Dockerfile
+    container_name: worker_service
     depends_on:
+      - api
       - redis
+    environment:
+      - REDIS_HOST=redis
+      - API_HOST=api
 
   pusher:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: pusher
+    build: ./   # path to your pusher Dockerfile
+    container_name: pusher_service
     depends_on:
+      - api
       - redis
-
+    environment:
+      - REDIS_HOST=redis
+      - API_HOST=api
