@@ -5,6 +5,9 @@
   "private": true,
   "scripts": {
     "dev": "bun index.ts"
+  }, 
+  "prisma": {
+    "schema": "./../../../packages/store/prisma/schema.prisma"
   },
   "dependencies": {
     "redisStream": "*"
