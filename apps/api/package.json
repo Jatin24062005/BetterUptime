@@ -5,6 +5,8 @@
   "private": true,
   "devDependencies": {
     "@types/bun": "latest"
+  },  "prisma": {
+    "schema": "./../../packages/store/prisma/schema.prisma"
   },
   "scripts": {
     "dev": "bun index.ts",
