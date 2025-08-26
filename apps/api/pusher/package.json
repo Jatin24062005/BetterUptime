@@ -5,7 +5,10 @@
   "private": true,
   "dependencies": {
     "redisStream": "*"
-  },  
+  },
+   "prisma": {
+    "schema": "./../../../packages/store/prisma/schema.prisma"
+  }, 
   "scripts": {
     "dev": "bun index.ts"
   },
