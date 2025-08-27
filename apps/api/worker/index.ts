@@ -2,11 +2,22 @@ import axios from "axios";
 import { xAck, xReadGroup } from "redisStream";
 import { prismaClient } from "store";
 import { WebsiteStatus } from "store/generated/prisma/client";
+import express from "express";
 
 const WORKER_ID = process.env.WORKER_ID || "india-2";
 const REGION_ID = process.env.REGION_ID || "2005";
 
+const app = express();
+const PORT = process.env.PORT || 3000;
 
+// Just to keep Render happy
+app.get("/", (req, res) => {
+  res.send("Worker is alive 🚀");
+});
+
+app.listen(PORT, () => {
+  console.log(`Fake server running on port ${PORT}`);
+});
 
 async function main() {
 
