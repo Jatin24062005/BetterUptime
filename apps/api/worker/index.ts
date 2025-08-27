@@ -12,7 +12,7 @@ async function main() {
 
     while(1){
   try {
-const response = await xReadGroup(REGION_ID, WORKER_ID);
+   const response = await xReadGroup(REGION_ID, WORKER_ID);
     console.log("response ReadGroup from worker:", response);
 
    

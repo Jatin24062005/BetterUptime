@@ -38,6 +38,18 @@ export const xBulkAdd = async (websites: Website[]) => {
 };
 
 export const xReadGroup = async (consumerGroup: string, worker: string) => {
+  try {
+    await client.xGroupCreate(
+      STREAM_NAME,
+      consumerGroup,  // use the same group name passed in
+      "$",
+      { MKSTREAM: true }
+    );
+  } catch (err: any) {
+    if (!err.message.includes("BUSYGROUP")) {
+      throw err; // ignore group already exists, rethrow others
+    }
+  }
  
   const res = await client.xReadGroup(
     consumerGroup,
