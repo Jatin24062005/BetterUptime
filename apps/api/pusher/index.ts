@@ -1,5 +1,18 @@
 import { xBulkAdd } from "redisStream";
 import { prismaClient } from "store";
+import express from "express"
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Just to keep Render happy
+app.get("/", (req, res) => {
+  res.send("Worker is alive 🚀");
+});
+
+app.listen(PORT, () => {
+  console.log(`Fake server running on port ${PORT}`);
+});
+
 
 type Website = {
   id: string,
