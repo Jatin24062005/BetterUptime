@@ -126,6 +126,7 @@ export default function DashboardPage() {
   const [checkInterval, setCheckInterval] = useState("30");
   const router = useRouter();
   const [websites, setWebsites] = useState<Website[]>([]);
+  const [averageResponseTime,setAverageResponseTime ] = useState(0);
 
   const token = Cookies.get("token");
 
@@ -207,7 +208,6 @@ export default function DashboardPage() {
   const filteredWebsites = (websites || []).filter((w) =>
     w.url.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
   const fetchWebsites = useCallback(async () => {
     try {
       const res = await axios.get(`${BACKEND_URL}/websites`, {
@@ -216,40 +216,53 @@ export default function DashboardPage() {
           authorization: token,
         },
       });
-
+  
       const resWebsites = Array.isArray(res.data.websites)
         ? res.data.websites
         : Object.values(res.data.websites || {});
-
+  
       console.log("Res website ", resWebsites);
-
-             setWebsites(
-         resWebsites.map((w: ApiWebsite) => {
-           const ticks = Array.isArray(w.ticks)
-             ? w.ticks
-             : w.ticks
-               ? [w.ticks]
-               : [];
-           const firstTick = ticks[0];
-
-           return {
-             id: w.id,
-             url: w.url,
-             status: firstTick?.status || "checking",
-             responseTime: firstTick?.responseTime || 0,
-             lastChecked: firstTick?.createdAt
-               ? new Date(firstTick.createdAt).toLocaleString()
-               : new Date().toLocaleString(),
-           };
-         })
-       );
-
-      console.log("Website fetched SUccessfully !");
+  
+      // Build websites array
+      const websitesData : Website[] = resWebsites.map((w: ApiWebsite) => {
+        const ticks = Array.isArray(w.ticks)
+          ? w.ticks
+          : w.ticks
+          ? [w.ticks]
+          : [];
+        const firstTick = ticks[0];
+  
+        return {
+          id: w.id,
+          url: w.url,
+          status: firstTick?.status || "checking",
+          responseTime: firstTick?.responseTime || 0,
+          lastChecked: firstTick?.createdAt
+            ? new Date(firstTick.createdAt).toLocaleString()
+            : new Date().toLocaleString(),
+        };
+      });
+  
+      setWebsites(websitesData);
+  
+      // ✅ Calculate average response time
+      const totalResponseTime = websitesData.reduce(
+        (sum, site) => sum + (site.responseTime || 0),
+        0
+      );
+  
+      const avgResponseTime =
+        websitesData.length > 0 ? totalResponseTime / websitesData.length : 0;
+  
+      setAverageResponseTime(avgResponseTime);
+  
+      console.log("Website fetched Successfully!");
       console.log("user websites : ", res.data);
     } catch (e) {
       console.log("Error while fetching websites : ", e);
     }
   }, [token]);
+  
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -396,7 +409,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-400 text-sm">Avg Response Time</p>
-                    <p className="text-2xl font-bold text-white">89ms</p>
+                    <p className="text-2xl font-bold text-white">{averageResponseTime}</p>
                   </div>
                   <Zap className="h-8 w-8 text-yellow-400" />
                 </div>

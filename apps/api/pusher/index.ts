@@ -6,7 +6,7 @@ const PORT = process.env.PORT || 3000;
 
 // Just to keep Render happy
 app.get("/", (req, res) => {
-  res.send("Worker is alive 🚀");
+  res.send("Pusher  is alive 🚀");
 });
 
 app.listen(PORT, () => {
