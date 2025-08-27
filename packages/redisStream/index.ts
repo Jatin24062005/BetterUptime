@@ -1,11 +1,16 @@
 import { createClient } from "redis";
 
-console.log("Connecting to Redis...", process.env.REDIS_URL );
-const client = await createClient({
-  url: process.env.REDIS_URL
-})
-  .on("error", (err) => console.log("Redis Client Error", err))
-  .connect();
+const client = createClient({
+  url: process.env.REDIS_URL || "rediss://default:ATXHAAIncDFlYzQ1MWJhOWQ3M2U0YWIwYWMzY2YwZTEyMTFjNWNiZXAxMTM3Njc@harmless-serval-13767.upstash.io:6379",
+  socket: {
+    tls: true,               
+    rejectUnauthorized: false 
+  },
+});
+
+client.on("error", (err) => console.error("Redis Client Error", err));
+
+await client.connect();
 
 type Website = {
   id: string;
