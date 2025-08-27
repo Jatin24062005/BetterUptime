@@ -72,9 +72,13 @@ async function main() {
       await xAck(REGION_ID.toString(), id.toString() );
     }
 
+
+
   } catch (err) {
     console.error("❌ Error in main function:", err);
   }
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+
 }
 };
 
