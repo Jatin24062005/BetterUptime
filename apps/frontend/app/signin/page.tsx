@@ -152,14 +152,8 @@ export default function SignInPage() {
             <CardHeader className="text-center pb-8">
               {/* Logo */}
               <div className="flex items-center justify-center space-x-2 mb-6">
-                <div className="w-10 h-10 bg-white rounded-sm flex items-center justify-center">
-                  <div className="w-8 h-8 bg-[#1a1f2e] rounded-sm flex items-center justify-center">
-                    <div className="w-4 h-4 bg-white rounded-sm"></div>
-                  </div>
-                </div>
-                <span className="text-2xl font-bold text-white">
-                  BetterUptime
-                </span>
+          
+          
               </div>
 
               <CardTitle className="text-3xl font-bold text-white mb-2">

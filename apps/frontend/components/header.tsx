@@ -137,8 +137,12 @@ export function Header() {
           </nav>
 
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" className="text-gray-300 hover:text-white hover:bg-transparent" asChild>
-              <Link href="/signin">Sign in</Link>
+            <Button variant="ghost" className={`text-gray-300 hover:text-white hover:bg-transparent ${token ? "hover:text-rose-400" : ""}`}  onClick={() => {
+              if (token) {
+                Cookies.remove("token");
+              }
+            }} asChild>
+             {token ?<Link href="/">Sign out</Link> :   <Link href="/signin">Sign in</Link>}
             </Button>
             <Button className="bg-[#6366f1] hover:bg-[#5855eb] text-white px-6 py-2 rounded-md font-medium" asChild>
              {token ?<Link href="/dashboard">Dashboard</Link> : <Link href="/signup">Sign up</Link>}
