@@ -35,6 +35,6 @@ const main = async () => {
 
 setInterval(() => {
   main();
-},  3*60* 1000);
+},  60* 1000);
 
 main();
