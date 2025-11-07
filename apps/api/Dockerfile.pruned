@@ -1,0 +1,17 @@
+# Base: Bun
+FROM oven/bun:1-alpine
+WORKDIR /app
+
+# Copy lockfiles first for better layer caching
+COPY . .
+RUN bun install && bun add prisma
+
+# App source
+
+# Prisma (optional)
+# Alpine has openssl already in this image; bunx runs local bin
+RUN bunx prisma generate --schema=packages/store/prisma/schema.prisma
+
+EXPOSE 5000
+# If your entry is apps/api/index.ts, point to that; otherwise adjust.
+CMD ["bun", "apps/api/index.ts"]

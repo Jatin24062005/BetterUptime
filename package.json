@@ -7,13 +7,13 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-  "dev:all": "turbo run dev --filter=frontend --filter=api --filter=worker --filter=pusher --parallel"
-
+    "dev:all": "turbo run dev --filter=frontend --filter=api --filter=worker --filter=pusher --parallel"
   },
   "devDependencies": {
+    "@types/node": "^24.10.0",
     "prettier": "^3.6.2",
     "turbo": "^2.5.5",
-    "typescript": "5.8.3"
+    "typescript": "^5.8.3"
   },
   "engines": {
     "node": ">=18"
@@ -24,7 +24,5 @@
     "packages/*",
     "apps/api/worker",
     "apps/api/pusher"
-  ],
-  "dependencies": {
-  }
+  ]
 }

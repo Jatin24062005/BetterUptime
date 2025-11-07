@@ -1,7 +1,7 @@
 import { createClient } from "redis";
 
 const client = createClient({
-  url: process.env.REDIS_URL || "rediss://default:ATXHAAIncDFlYzQ1MWJhOWQ3M2U0YWIwYWMzY2YwZTEyMTFjNWNiZXAxMTM3Njc@harmless-serval-13767.upstash.io:6379",
+  url:"rediss://default_ro:Al6iAAIgcDJ5uJJmHwZmDYJQOvrEbRVB4MKzPD_msY-i4G2D22xoKg@evolving-liger-24226.upstash.io:6379",
   socket: {
     tls: true,               
     rejectUnauthorized: false 

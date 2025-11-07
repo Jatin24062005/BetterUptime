@@ -1,45 +1,87 @@
-version: "3.9"
+name: betteruptime
+
 services:
   redis:
-    image: redis:latest
+    image: redis:7-alpine
     container_name: redis_service
     ports:
       - "6379:6379"
 
+  # Build the single image ONCE here and name it
   api:
-    build: ./   # path to your API Dockerfile
+    build: .                          # builds the root Dockerfile once
+    image: betteruptime:latest        # 👈 your single image name/tag
     container_name: api_service
+    working_dir: /app/apps/api
+    command: bun run start            # or "bun run dev" during dev
+    environment:
+      PORT: "5000"
+      REDIS_HOST: redis
+      REDIS_URL: "rediss://default_ro:Al6iAAIgcDJ5uJJmHwZmDYJQOvrEbRVB4MKzPD_msY-i4G2D22xoKg@evolving-liger-24226.upstash.io:6379"
+    depends_on:
+      - redis
     ports:
       - "5000:5000"
-    depends_on:
-      - redis
-    environment:
-      - REDIS_HOST=redis
-
-  frontend:
-    build: ./   # path to your frontend Dockerfile
-    container_name: frontend_service
-    ports:
-      - "3000:3000"
-    depends_on:
-      - api
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:5000/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
   worker:
-    build: ./   # path to your worker Dockerfile
+    image: betteruptime:latest        # 👈 reuse the SAME image
     container_name: worker_service
+    working_dir: /app/apps/api/worker
+    command: bun run dev            # your queue consumer script
+    environment:
+      REDIS_HOST: redis
+      API_HOST: api
+      REDIS_URL: "rediss://default_ro:Al6iAAIgcDJ5uJJmHwZmDYJQOvrEbRVB4MKzPD_msY-i4G2D22xoKg@evolving-liger-24226.upstash.io:6379"
+
     depends_on:
       - api
       - redis
-    environment:
-      - REDIS_HOST=redis
-      - API_HOST=api
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'bun.*start' || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
   pusher:
-    build: ./   # path to your pusher Dockerfile
+    image: betteruptime:latest
     container_name: pusher_service
+    working_dir: /app/apps/api/pusher
+    command: bun run dev
+    environment:
+      PORT: "3001"
+      REDIS_HOST: redis
+      API_HOST: api 
+      REDIS_URL: "rediss://default_ro:Al6iAAIgcDJ5uJJmHwZmDYJQOvrEbRVB4MKzPD_msY-i4G2D22xoKg@evolving-liger-24226.upstash.io:6379"
     depends_on:
       - api
-      - redis
-    environment:
-      - REDIS_HOST=redis
-      - API_HOST=api
+    ports:
+      - "3001:3001"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3001/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # frontend:
+  #   image: betteruptime:latest
+  #   container_name: frontend_service
+  #   working_dir: /app/apps/frontend
+  #   # Ensure your server binds to 0.0.0.0 for Docker
+  #   command: bun run start -- -H 0.0.0.0 -p 3000   # <= changed
+  #   environment:
+  #     PORT: "3000"
+  #     NEXT_PUBLIC_API_URL: http://api:5000
+  #   depends_on:
+  #     - api
+  #   ports:
+  #     - "3000:3000"
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "curl -fsS http://localhost:3000 || exit 1"]
+  #     interval: 10s
+  #     timeout: 3s
+  #     retries: 5
