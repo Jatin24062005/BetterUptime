@@ -1,0 +1,38 @@
+# ------------------------------
+# 1. Base image (Bun official)
+# ------------------------------
+FROM oven/bun:1
+
+# ------------------------------
+# 2. Set working directory
+# ------------------------------
+WORKDIR /app
+
+# ------------------------------
+# 3. Copy entire monorepo
+# ------------------------------
+COPY . .
+
+# ------------------------------
+# 4. Move into API folder
+# ------------------------------
+WORKDIR /app/apps/api
+
+# ------------------------------
+# 5. Install API dependencies
+# ------------------------------
+RUN bun install
+
+# ------------------------------
+# 6. Cloud Run expects the server
+#    to listen on 0.0.0.0:$PORT
+# ------------------------------
+ENV PORT=8080
+
+# (Cloud Run sets PORT at runtime automatically: 8080, 8081 etc.)
+EXPOSE 8080
+
+# ------------------------------
+# 7. Start API server
+# ------------------------------
+CMD ["bun", "index.ts"]
