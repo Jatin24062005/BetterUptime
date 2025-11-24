@@ -16,7 +16,7 @@ COPY . .
 # ------------------------------
 # 4. Move into API folder
 # ------------------------------
-WORKDIR /app/apps/api
+WORKDIR /app/apps/api/pusher
 
 # ------------------------------
 # 5. Install API dependencies
@@ -27,10 +27,11 @@ RUN bun install
 # 6. Cloud Run expects the server
 #    to listen on 0.0.0.0:$PORT
 # ------------------------------
-ENV PORT=8080 
+ENV PORT=8080
 ENV DATABASE_URL=postgresql://neondb_owner:npg_l9SZ8vphHujy@ep-holy-wave-ade5ll1x-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 ENV JWT_SECRET=Gungun@2005
-
+ENV REGION_ID ="2005"
+ENV WORKER_ID="india-2"
 
 # (Cloud Run sets PORT at runtime automatically: 8080, 8081 etc.)
 EXPOSE 8080
