@@ -5,4 +5,4 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const BACKEND_URL =" https://betteruptime-backend-api.onrender.com"
+export const BACKEND_URL ="https://betteruptime-api-267214421211.asia-south1.run.app"

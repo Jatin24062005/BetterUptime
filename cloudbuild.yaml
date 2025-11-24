@@ -1,5 +1,30 @@
 steps:
+  # Step 1: Build and push the image using Docker
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'asia-south1-docker.pkg.dev/doorships/betteruptime/api', '-f', 'Dockerfile.api', '.']
+    args: [
+      'build',
+      '-t', 'asia-south1-docker.pkg.dev/doorships/betteruptime/api',
+      '-f', 'Dockerfile.api',
+      '.'
+    ]
+
+  # Step 2: Push the image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'push',
+      'asia-south1-docker.pkg.dev/doorships/betteruptime/api'
+    ]
+
+  # Step 3: Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args: [
+      'run', 'deploy', 'betteruptime-api',
+      '--image', 'asia-south1-docker.pkg.dev/doorships/betteruptime/api',
+      '--region', 'asia-south1',
+      '--platform', 'managed',
+      '--allow-unauthenticated'
+    ]
+
 images:
   - 'asia-south1-docker.pkg.dev/doorships/betteruptime/api'
