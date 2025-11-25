@@ -32,6 +32,8 @@ ENV DATABASE_URL="postgresql://neondb_owner:npg_l9SZ8vphHujy@ep-holy-wave-ade5ll
 ENV JWT_SECRET=Gungun@2005
 ENV REGION_ID ="2005"
 ENV WORKER_ID="india-2"
+ENV REDIS_URL=rediss://default:AV6iAAIncDI2YmM0NTc3MmY5Mzc0OTcyODI5Y2I0ZTgwMmU3OWQ1YnAyMjQyMjY@evolving-liger-24226.upstash.io:6379
+
 
 
 # (Cloud Run sets PORT at runtime automatically: 8080, 8081 etc.)

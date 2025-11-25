@@ -1,7 +1,9 @@
 import { createClient } from "redis";
+import dotenv from "dotenv";
+dotenv.config();
 
 const client = createClient({
-  url:"rediss://default_ro:Al6iAAIgcDJ5uJJmHwZmDYJQOvrEbRVB4MKzPD_msY-i4G2D22xoKg@evolving-liger-24226.upstash.io:6379",
+  url: `${process.env.REDIS_URL}`,
   socket: {
     tls: true,               
     rejectUnauthorized: false 
