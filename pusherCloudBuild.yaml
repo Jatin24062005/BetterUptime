@@ -3,8 +3,8 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'build',
-      '-t', 'asia-south1-docker.pkg.dev/gaganprojects/betteruptime/api',
-      '-f', 'Dockerfile.api',
+      '-t', 'asia-south1-docker.pkg.dev/gaganprojects/betteruptime/pusher',
+      '-f', 'Dockerfile.pusher',
       '.'
     ]
 
@@ -12,19 +12,19 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'push',
-      'asia-south1-docker.pkg.dev/gaganprojects/betteruptime/api'
+      'asia-south1-docker.pkg.dev/gaganprojects/betteruptime/pusher'
     ]
 
   # Step 3: Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args: [
-      'run', 'deploy', 'betteruptime-api',
-      '--image', 'asia-south1-docker.pkg.dev/gaganprojects/betteruptime/api',
+      'run', 'deploy', 'betteruptime-pusher',
+      '--image', 'asia-south1-docker.pkg.dev/gaganprojects/betteruptime/pusher',
       '--region', 'asia-south1',
       '--platform', 'managed',
       '--allow-unauthenticated'
     ]
 
 images:
-  - 'asia-south1-docker.pkg.dev/gaganprojects/betteruptime/api'
+  - 'asia-south1-docker.pkg.dev/gaganprojects/betteruptime/pusher'
