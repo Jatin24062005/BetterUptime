@@ -4,8 +4,8 @@ import { prismaClient } from "store";
 import { WebsiteStatus } from "store/generated/prisma/client";
 import express from "express";
 
-const WORKER_ID = process.env.WORKER_ID || "india-2";
-const REGION_ID = process.env.REGION_ID || "2005";
+const WORKER_ID = process.env.WORKER_ID ;
+const REGION_ID = process.env.REGION_ID ;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
