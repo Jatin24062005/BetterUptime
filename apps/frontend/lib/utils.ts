@@ -5,5 +5,5 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const BACKEND_URL ="http://localhost:5000"
+export const BACKEND_URL ="https://betteruptime-api-381458569054.asia-south1.run.app"
 // "https://betteruptime-api-381458569054.asia-south1.run.app"
