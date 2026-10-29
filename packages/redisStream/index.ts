@@ -66,9 +66,18 @@ export const xReadGroup = async (consumerGroup: string, worker: string) => {
   );
 
   console.log(res);
-  // @ts-ignore
-  const messages: any[] =
-    Array.isArray(res) && res[0]?.messages ? res[0].messages : [];
+
+  const stream = Array.isArray(res)
+    ? res.find(
+        (entry): entry is { messages: any[] } =>
+          !!entry &&
+          typeof entry === "object" &&
+          "messages" in entry &&
+          Array.isArray((entry as { messages?: unknown }).messages)
+      )
+    : undefined;
+
+  const messages: any[] = stream?.messages ?? [];
   return messages;
 };
 
