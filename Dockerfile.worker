@@ -37,7 +37,7 @@ ENV REDIS_URL=rediss://default:AV6iAAIncDI2YmM0NTc3MmY5Mzc0OTcyODI5Y2I0ZTgwMmU3O
 
 
 # (Cloud Run sets PORT at runtime automatically: 8080, 8081 etc.)
-EXPOSE 8080
+# EXPOSE 8080
 
 # ------------------------------
 # 7. Start API server

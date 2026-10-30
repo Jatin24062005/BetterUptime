@@ -1,182 +1,58 @@
-import { Star, Quote } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import Image from "next/image"
+import { Star } from "lucide-react"
+import Link from "next/link"
+import { Panel, Section, SectionHead } from "@/components/ui-kit"
 
-const testimonials = [
-  {
-    name: "Sarah Johnson",
-    role: "DevOps Engineer",
-    company: "TechCorp",
-    avatar: "/placeholder.svg?height=60&width=60",
-    content:
-      "BetterUptime has been a game-changer for our monitoring setup. The 30-second checks and instant alerts have helped us catch issues before they impact our users. The traceroute feature is incredibly useful for debugging network issues.",
-    rating: 5,
-    featured: true,
-  },
-  {
-    name: "Michael Chen",
-    role: "CTO",
-    company: "StartupXYZ",
-    avatar: "/placeholder.svg?height=60&width=60",
-    content:
-                  "We switched from our previous monitoring solution and couldn&apos;t be happier. The SSL certificate monitoring alone has saved us from multiple outages. The team collaboration features make incident response much smoother.",
-    rating: 5,
-    featured: false,
-  },
-  {
-    name: "Emily Rodriguez",
-    role: "Site Reliability Engineer",
-    company: "CloudTech",
-    avatar: "/placeholder.svg?height=60&width=60",
-    content:
-      "The global monitoring locations give us confidence that our services are accessible worldwide. The detailed analytics and historical data help us identify patterns and optimize our infrastructure.",
-    rating: 5,
-    featured: false,
-  },
-  {
-    name: "David Kim",
-    role: "Full Stack Developer",
-    company: "WebAgency",
-    avatar: "/placeholder.svg?height=60&width=60",
-    content:
-      "Love the simplicity of the setup process. Had our entire monitoring stack configured in under 10 minutes. The status pages look professional and our clients appreciate the transparency.",
-    rating: 5,
-    featured: false,
-  },
-  {
-    name: "Lisa Thompson",
-    role: "Operations Manager",
-    company: "E-commerce Plus",
-    avatar: "/placeholder.svg?height=60&width=60",
-    content:
-      "The cron monitoring has been a lifesaver for our backup processes. We no longer worry about silent failures. The Slack integration keeps our team informed without overwhelming notifications.",
-    rating: 5,
-    featured: true,
-  },
-  {
-    name: "Alex Martinez",
-    role: "Lead Engineer",
-    company: "FinTech Solutions",
-    avatar: "/placeholder.svg?height=60&width=60",
-    content:
-      "Enterprise-grade monitoring at a fraction of the cost. The API monitoring capabilities are robust and the custom integrations work flawlessly. Support team is responsive and knowledgeable.",
-    rating: 5,
-    featured: false,
-  },
+const items = [
+  { name: "Sarah Johnson", role: "DevOps Engineer", company: "TechCorp", text: "The 30-second checks and instant alerts help us catch issues before they reach our users. The traceroute output is a huge help when debugging network problems." },
+  { name: "Michael Chen", role: "CTO", company: "StartupXYZ", text: "We switched from our previous tool and haven’t looked back. SSL monitoring alone has saved us from multiple outages, and incident response is much smoother." },
+  { name: "Emily Rodriguez", role: "Site Reliability Engineer", company: "CloudTech", text: "Global locations tell us our services are reachable worldwide, and the historical data helps us spot patterns and tune our infrastructure." },
+  { name: "David Kim", role: "Full Stack Developer", company: "WebAgency", text: "Setup took under 10 minutes. The status pages look professional and our clients appreciate the transparency." },
+  { name: "Lisa Thompson", role: "Operations Manager", company: "E-commerce Plus", text: "Cron monitoring ended silent backup failures for us, and the Slack integration keeps the team informed without noise." },
+  { name: "Alex Martinez", role: "Lead Engineer", company: "FinTech Solutions", text: "Enterprise-grade monitoring at a fraction of the cost. API checks are robust, custom integrations work, and support is quick." },
 ]
 
 export function Testimonials() {
   return (
-    <section className="py-24 bg-[#0f1419]">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <Badge variant="outline" className="border-gray-700 text-gray-400 mb-6">
-            Customer Stories
-          </Badge>
-          <h2 className="text-4xl sm:text-5xl font-bold mb-6 text-white">Trusted by developers worldwide</h2>
-          <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            Don&apos;t just take our word for it. Here&apos;s what developers and teams are saying about our monitoring platform
-            and how it&apos;s helping them build more reliable systems.
-          </p>
-        </div>
+    <Section>
+      <SectionHead title="Trusted by developers worldwide" desc="What teams say about catching incidents earlier and fixing them faster." />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {items.map((t) => (
+          <Panel key={t.name} className="flex flex-col p-6">
+            <div className="flex gap-0.5" aria-label="5 out of 5 stars">
+              {Array.from({ length: 5 }).map((_, i) => <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />)}
+            </div>
+            <p className="mt-5 flex-1 leading-relaxed text-zinc-300">{t.text}</p>
+            <div className="mt-6 flex items-center gap-3 border-t border-white/[0.07] pt-5">
+              <span className="grid h-10 w-10 place-items-center rounded-full bg-[#34e0a1]/10 text-sm font-medium text-[#34e0a1]">
+                {t.name.split(" ").map((n) => n[0]).join("")}
+              </span>
+              <div>
+                <p className="text-sm font-medium text-white">{t.name}</p>
+                <p className="text-xs text-zinc-500">{t.role}, {t.company}</p>
+              </div>
+            </div>
+          </Panel>
+        ))}
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-          {testimonials.map((testimonial, index) => (
-            <Card
-              key={index}
-              className={`bg-[#1a1f2e] border-gray-800 hover:border-gray-700 transition-all duration-300 hover:scale-105 ${
-                testimonial.featured ? "ring-1 ring-[#6366f1]/50" : ""
-              }`}
-            >
-              <CardContent className="p-6">
-                <div className="flex items-center mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
-                  ))}
-                </div>
+      <dl className="mx-auto mt-16 grid max-w-3xl grid-cols-2 gap-8 text-center sm:grid-cols-4">
+        {[["4.9/5", "Average rating"], ["50K+", "Customers"], ["99.9%", "Satisfaction"], ["24/7", "Support"]].map(([v, l]) => (
+          <div key={l}><dt className="text-2xl font-semibold tracking-tight text-white">{v}</dt><dd className="mt-1 text-sm text-zinc-500">{l}</dd></div>
+        ))}
+      </dl>
 
-                <div className="relative mb-6">
-                  <Quote className="absolute -top-2 -left-2 h-8 w-8 text-[#6366f1]/20" />
-                  <p className="text-gray-300 text-base leading-relaxed pl-6">{testimonial.content}</p>
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <Image
-                    src={testimonial.avatar || "/placeholder.svg"}
-                    alt={testimonial.name}
-                    width={48}
-                    height={48}
-                    className="w-12 h-12 rounded-full object-cover border-2 border-gray-700"
-                  />
-                  <div>
-                    <div className="font-semibold text-white">{testimonial.name}</div>
-                    <div className="text-sm text-gray-400">
-                      {testimonial.role} at {testimonial.company}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+      <Panel className="mx-auto mt-16 max-w-4xl p-8">
+        <h3 className="text-2xl font-semibold tracking-tight text-white">How TechCorp cut downtime by 85%</h3>
+        <div className="mt-8 grid gap-6 sm:grid-cols-3 sm:divide-x sm:divide-white/[0.07]">
+          {[["85%", "Less downtime"], ["45%", "Faster incident response"], ["60%", "Lower cost than before"]].map(([v, l]) => (
+            <div key={l} className="sm:px-6 sm:first:pl-0">
+              <p className="text-4xl font-semibold tracking-tight text-[#34e0a1]">{v}</p>
+              <p className="mt-2 text-sm text-zinc-400">{l}</p>
+            </div>
           ))}
         </div>
-
-        {/* Trust Indicators */}
-        <div className="text-center mb-16">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 max-w-4xl mx-auto">
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-6 w-6 text-yellow-400 fill-current" />
-                ))}
-              </div>
-              <div className="text-2xl font-bold text-white mb-1">4.9/5</div>
-              <div className="text-gray-400">Average rating</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-white mb-1">50K+</div>
-              <div className="text-gray-400">Happy customers</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-white mb-1">99.9%</div>
-              <div className="text-gray-400">Customer satisfaction</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-white mb-1">24/7</div>
-              <div className="text-gray-400">Support available</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Case Study Preview */}
-        <div className="bg-[#1a1f2e] border border-gray-800 rounded-lg p-8 max-w-4xl mx-auto">
-          <div className="text-center mb-6">
-            <h3 className="text-2xl font-bold text-white mb-2">Success Story</h3>
-            <p className="text-gray-400">How TechCorp reduced downtime by 85% with BetterUptime</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div>
-              <div className="text-3xl font-bold text-green-400 mb-2">85%</div>
-              <div className="text-gray-400">Reduction in downtime</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-blue-400 mb-2">45%</div>
-              <div className="text-gray-400">Faster incident response</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-purple-400 mb-2">60%</div>
-              <div className="text-gray-400">Cost savings vs previous solution</div>
-            </div>
-          </div>
-
-          <div className="mt-6 text-center">
-            <button className="text-[#6366f1] hover:text-[#5855eb] font-medium transition-colors">
-              Read full case study →
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
+        <Link href="#case-study" className="mt-8 inline-block text-sm font-medium text-[#34e0a1] hover:underline">Read the case study</Link>
+      </Panel>
+    </Section>
   )
 }

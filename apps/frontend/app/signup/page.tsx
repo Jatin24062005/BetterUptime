@@ -1,359 +1,316 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import axios from "axios";
+import Cookies from "js-cookie";
+import { toast } from "sonner";
+import { Bricolage_Grotesque, Instrument_Sans } from "next/font/google";
+import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { BACKEND_URL } from "@/lib/utils";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Eye, EyeOff, Mail, Lock, User, ArrowRight, ArrowLeft, CheckCircle } from "lucide-react"
-import axios from "axios"
-import { BACKEND_URL } from "@/lib/utils"
-import { toast } from "sonner"
-import { useRouter } from "next/navigation"
-import Cookies from "js-cookie"
+const display = Bricolage_Grotesque({
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["500", "600", "700"],
+});
+const body = Instrument_Sans({ subsets: ["latin"], variable: "--font-body" });
+
+const inputCls =
+  "h-12 rounded-xl border-white/10 bg-white/[0.04] pl-11 text-[15px] text-white placeholder:text-zinc-600 focus-visible:border-emerald-400/50 focus-visible:ring-emerald-400/20";
+
+const perks = [
+  "10 monitors and heartbeats included",
+  "3-minute check intervals",
+  "Free status page included",
+];
 
 export default function SignUpPage() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
     acceptTerms: false,
-  })
-  const [isLoading, setIsLoading] = useState(false)
+  });
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
 
-    // Simulate API call
-
-    try{
-      const response = await axios.post(`${BACKEND_URL}/user/signup`,{
-         username : formData.email,
-         password : formData.password
-      })
-
-      toast.success("Account Created Successfully !",{
-        description: "Welcome to the BetterUptime ",
+    try {
+      const response = await axios.post(`${BACKEND_URL}/user/signup`, {
+        username: formData.email,
+        password: formData.password,
       });
+
+      toast.success("Account created", { description: "Welcome to BetterUptime." });
       router.push("/");
-
-      console.log("signUp SuccessFull Response : ",response);
-
-    }catch(e){
-     console.log("SignUp failed !",e);
+      console.log("signUp SuccessFull Response : ", response);
+    } catch (err) {
+      console.log("SignUp failed !", err);
+      toast.error("Couldn't create your account. Try a different email.");
     }
 
-    setIsLoading(false)
-    // Redirect to dashboard or verification page
-  }
+    setIsLoading(false);
+  };
 
   const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const getPasswordStrength = (password: string) => {
-    let strength = 0
-    if (password.length >= 8) strength++
-    if (/[A-Z]/.test(password)) strength++
-    if (/[a-z]/.test(password)) strength++
-    if (/[0-9]/.test(password)) strength++
-    if (/[^A-Za-z0-9]/.test(password)) strength++
-    return strength
-  }
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
+    return strength;
+  };
 
-  const passwordStrength = getPasswordStrength(formData.password)
-  const strengthColors = ["bg-red-500", "bg-red-400", "bg-yellow-500", "bg-green-400", "bg-green-500"]
-  const strengthLabels = ["Very Weak", "Weak", "Fair", "Good", "Strong"]
+  const passwordStrength = getPasswordStrength(formData.password);
+  const strengthColors = ["bg-rose-500", "bg-rose-400", "bg-amber-400", "bg-emerald-400", "bg-emerald-400"];
+  const strengthLabels = ["Very weak", "Weak", "Fair", "Good", "Strong"];
+  const strengthText =
+    passwordStrength >= 4 ? "text-emerald-300" : passwordStrength >= 3 ? "text-emerald-300" : passwordStrength >= 2 ? "text-amber-300" : "text-rose-300";
 
-  useEffect(()=>{
-    const token = Cookies.get("token")
-    if(token){
-      router.push('/dashboard')
-    }
-  },[router])
+  const mismatch = !!formData.confirmPassword && formData.password !== formData.confirmPassword;
+
+  useEffect(() => {
+    const token = Cookies.get("token");
+    if (token) router.push("/dashboard");
+  }, [router]);
 
   return (
-    <div className="min-h-screen bg-[#0f1419] relative overflow-hidden">
-      {/* Vignette Glow Background */}
-      <div className="absolute inset-0">
-        {/* Main vignette effect */}
+    <div
+      className={`${display.variable} ${body.variable} grid min-h-screen bg-[#07090d] font-[family-name:var(--font-body)] text-zinc-300 antialiased selection:bg-emerald-400/30 lg:grid-cols-[1.05fr_1fr]`}
+    >
+      {/* Brand panel */}
+      <aside className="relative hidden overflow-hidden border-r border-white/[0.06] lg:flex lg:flex-col lg:justify-between lg:p-12">
         <div
-          className="absolute inset-0"
-          style={{
-            background: `
-              radial-gradient(circle at 50% 40%, 
-                rgba(99, 102, 241, 0.15) 0%, 
-                rgba(99, 102, 241, 0.08) 25%, 
-                rgba(15, 20, 25, 0.95) 60%, 
-                rgba(15, 20, 25, 1) 100%
-              )
-            `,
-          }}
+          aria-hidden
+          className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_30%_100%,rgba(52,211,153,0.16),transparent),radial-gradient(ellipse_50%_40%_at_80%_0%,rgba(20,184,166,0.08),transparent)]"
         />
+        <Link href="/" className="relative flex items-center gap-2.5">
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-emerald-300 to-teal-500 shadow-[0_0_28px_-4px_rgba(52,211,153,0.6)]">
+            <span className="h-3.5 w-3.5 rounded-full bg-[#06100d]" />
+          </span>
+          <span className="font-[family-name:var(--font-display)] text-xl font-semibold tracking-tight text-white">
+            BetterUptime
+          </span>
+        </Link>
 
-        {/* Additional glow effects */}
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#6366f1]/10 rounded-full blur-3xl animate-pulse"></div>
-        <div
-          className="absolute bottom-0 left-1/4 w-80 h-80 bg-green-500/8 rounded-full blur-3xl animate-pulse"
-          style={{ animationDelay: "1s" }}
-        ></div>
-        <div
-          className="absolute top-1/2 right-0 w-64 h-64 bg-purple-500/6 rounded-full blur-3xl animate-pulse"
-          style={{ animationDelay: "2s" }}
-        ></div>
-        <div
-          className="absolute top-1/3 left-0 w-72 h-72 bg-blue-500/8 rounded-full blur-3xl animate-pulse"
-          style={{ animationDelay: "0.5s" }}
-        ></div>
+        <div className="relative max-w-lg">
+          <h2 className="font-[family-name:var(--font-display)] text-5xl font-semibold leading-[1.05] tracking-tight text-white">
+            Start monitoring your websites in 30 seconds.
+          </h2>
+          <ul className="mt-10 space-y-4">
+            {perks.map((p) => (
+              <li key={p} className="flex items-center gap-3 text-zinc-300">
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-emerald-400/15">
+                  <Check className="h-3.5 w-3.5 text-emerald-300" />
+                </span>
+                {p}
+              </li>
+            ))}
+          </ul>
+        </div>
 
-        {/* Subtle grid pattern */}
+        <p className="relative text-sm text-zinc-500">No credit card needed.</p>
+      </aside>
+
+      {/* Form */}
+      <main className="relative flex items-center justify-center p-6 sm:p-10">
         <div
-          className="absolute inset-0 opacity-5"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
-            `,
-            backgroundSize: "50px 50px",
-          }}
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(ellipse_60%_100%_at_50%_0%,rgba(52,211,153,0.09),transparent)] lg:hidden"
         />
-      </div>
-
-      {/* Content */}
-      <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
-        <div className="w-full max-w-md">
-          {/* Back to home link */}
+        <div className="relative w-full max-w-[420px] py-6">
           <Link
             href="/"
-            className="inline-flex items-center text-gray-400 hover:text-white transition-colors mb-8 group"
+            className="group mb-8 inline-flex items-center gap-2 text-sm text-zinc-400 transition-colors hover:text-white"
           >
-            <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
             Back to home
           </Link>
 
-          <Card className="bg-[#1a1f2e]/80 backdrop-blur-xl border-gray-800/50 shadow-2xl">
-            <CardHeader className="text-center pb-8">
-              {/* Logo */}
-              <div className="flex items-center justify-center space-x-2 mb-6">
-                <div className="w-10 h-10 bg-white rounded-sm flex items-center justify-center">
-                  <div className="w-8 h-8 bg-[#1a1f2e] rounded-sm flex items-center justify-center">
-                    <div className="w-4 h-4 bg-white rounded-sm"></div>
-                  </div>
-                </div>
-                <span className="text-2xl font-bold text-white">BetterUptime</span>
-              </div>
+          <h1 className="font-[family-name:var(--font-display)] text-4xl font-semibold tracking-tight text-white">
+            Create your account
+          </h1>
+          <p className="mt-2 text-zinc-400">Free to start. Set up your first monitor in a minute.</p>
 
-              <CardTitle className="text-3xl font-bold text-white mb-2">Create your account</CardTitle>
-              <CardDescription className="text-gray-400 text-lg">
-                Start monitoring your websites in 30 seconds
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent className="space-y-6">
-             
-
-              {/* Form */}
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-gray-300 text-sm font-medium">
-                    Full name
-                  </Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-                    <Input
-                      id="name"
-                      type="text"
-                      placeholder="Enter your full name"
-                      value={formData.name}
-                      onChange={(e) => handleInputChange("name", e.target.value)}
-                      className="pl-11 h-12 bg-[#0f1419] border-gray-700 text-white placeholder-gray-500 focus:border-[#6366f1] focus:ring-[#6366f1] transition-all"
-                      required
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-gray-300 text-sm font-medium">
-                    Email address
-                  </Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
-                      className="pl-11 h-12 bg-[#0f1419] border-gray-700 text-white placeholder-gray-500 focus:border-[#6366f1] focus:ring-[#6366f1] transition-all"
-                      required
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-gray-300 text-sm font-medium">
-                    Password
-                  </Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Create a strong password"
-                      value={formData.password}
-                      onChange={(e) => handleInputChange("password", e.target.value)}
-                      className="pl-11 pr-11 h-12 bg-[#0f1419] border-gray-700 text-white placeholder-gray-500 focus:border-[#6366f1] focus:ring-[#6366f1] transition-all"
-                      required
-                      disabled={isLoading}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
-                      disabled={isLoading}
-                    >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
-                  </div>
-
-                  {/* Password Strength Indicator */}
-                  {formData.password && (
-                    <div className="space-y-2">
-                      <div className="flex space-x-1">
-                        {[...Array(5)].map((_, i) => (
-                          <div
-                            key={i}
-                            className={`h-1 flex-1 rounded-full transition-all ${
-                              i < passwordStrength ? strengthColors[passwordStrength - 1] : "bg-gray-700"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <p className="text-xs text-gray-400">
-                        Password strength:{" "}
-                        <span
-                          className={`${passwordStrength >= 3 ? "text-green-400" : passwordStrength >= 2 ? "text-yellow-400" : "text-red-400"}`}
-                        >
-                          {strengthLabels[passwordStrength - 1] || "Very Weak"}
-                        </span>
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-gray-300 text-sm font-medium">
-                    Confirm password
-                  </Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      placeholder="Confirm your password"
-                      value={formData.confirmPassword}
-                      onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                      className="pl-11 pr-11 h-12 bg-[#0f1419] border-gray-700 text-white placeholder-gray-500 focus:border-[#6366f1] focus:ring-[#6366f1] transition-all"
-                      required
-                      disabled={isLoading}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
-                      disabled={isLoading}
-                    >
-                      {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
-                  </div>
-                  {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                    <p className="text-xs text-red-400">Passwords do not match</p>
-                  )}
-                </div>
-
-                <div className="flex items-start space-x-2">
-                  <input
-                    id="acceptTerms"
-                    type="checkbox"
-                    checked={formData.acceptTerms}
-                    onChange={(e) => handleInputChange("acceptTerms", e.target.checked)}
-                    className="w-4 h-4 text-[#6366f1] bg-[#0f1419] border-gray-700 rounded focus:ring-[#6366f1] focus:ring-2 mt-1"
-                    disabled={isLoading}
-                    required
-                  />
-                  <Label htmlFor="acceptTerms" className="text-sm text-gray-400 leading-relaxed">
-                    I agree to the{" "}
-                    <Link href="/terms" className="text-[#6366f1] hover:text-[#5855eb] transition-colors">
-                      Terms of Service
-                    </Link>{" "}
-                    and{" "}
-                    <Link href="/privacy" className="text-[#6366f1] hover:text-[#5855eb] transition-colors">
-                      Privacy Policy
-                    </Link>
-                  </Label>
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full bg-[#6366f1] hover:bg-[#5855eb] text-white font-semibold py-3 h-12 transition-all hover:scale-[1.02] disabled:hover:scale-100"
-                  disabled={isLoading || formData.password !== formData.confirmPassword || !formData.acceptTerms}
-                >
-                  {isLoading ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Creating account...</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center space-x-2">
-                      <span>Create your account</span>
-                      <ArrowRight className="h-5 w-5" />
-                    </div>
-                  )}
-                </Button>
-              </form>
-
-              {/* Switch to Sign In */}
-              <div className="text-center pt-4 border-t border-gray-800">
-                <span className="text-gray-400 text-sm">Already have an account? </span>
-                <Link
-                  href="/signin"
-                  className="text-[#6366f1] hover:text-[#5855eb] text-sm font-medium transition-colors"
-                >
-                  Sign in
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Features preview */}
-          <div className="mt-8">
-            <div className="grid grid-cols-1 gap-3">
-              <div className="flex items-center space-x-3 text-gray-400 text-sm">
-                <CheckCircle className="h-4 w-4 text-green-400" />
-                <span>10 monitors and heartbeats included</span>
-              </div>
-              <div className="flex items-center space-x-3 text-gray-400 text-sm">
-                <CheckCircle className="h-4 w-4 text-green-400" />
-                <span>3-minute check intervals</span>
-              </div>
-              <div className="flex items-center space-x-3 text-gray-400 text-sm">
-                <CheckCircle className="h-4 w-4 text-green-400" />
-                <span>Free status page included</span>
+          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-sm font-medium text-zinc-300">
+                Full name
+              </Label>
+              <div className="relative">
+                <User className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500" />
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Alex Morgan"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  className={inputCls}
+                  required
+                  disabled={isLoading}
+                />
               </div>
             </div>
-          </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium text-zinc-300">
+                Email
+              </Label>
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@company.com"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  className={inputCls}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium text-zinc-300">
+                Password
+              </Label>
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500" />
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="At least 8 characters"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange("password", e.target.value)}
+                  className={`${inputCls} pr-11`}
+                  required
+                  disabled={isLoading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500 transition-colors hover:text-zinc-200"
+                  disabled={isLoading}
+                >
+                  {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
+                </button>
+              </div>
+
+              {formData.password && (
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex gap-1.5">
+                    {[...Array(5)].map((_, i) => (
+                      <div
+                        key={i}
+                        className={`h-1 flex-1 rounded-full transition-colors ${
+                          i < passwordStrength ? strengthColors[passwordStrength - 1] : "bg-white/10"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs text-zinc-500">
+                    Strength:{" "}
+                    <span className={strengthText}>{strengthLabels[passwordStrength - 1] || "Very weak"}</span>
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword" className="text-sm font-medium text-zinc-300">
+                Confirm password
+              </Label>
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500" />
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Repeat your password"
+                  value={formData.confirmPassword}
+                  onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                  className={`${inputCls} pr-11 ${mismatch ? "border-rose-500/60 focus-visible:border-rose-500/60 focus-visible:ring-rose-500/20" : ""}`}
+                  required
+                  disabled={isLoading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500 transition-colors hover:text-zinc-200"
+                  disabled={isLoading}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
+                </button>
+              </div>
+              {mismatch && <p className="text-xs text-rose-300">Passwords don&apos;t match.</p>}
+            </div>
+
+            <label htmlFor="acceptTerms" className="flex cursor-pointer items-start gap-2.5 text-sm leading-relaxed text-zinc-400">
+              <input
+                id="acceptTerms"
+                type="checkbox"
+                checked={formData.acceptTerms}
+                onChange={(e) => handleInputChange("acceptTerms", e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-white/20 bg-white/5 accent-emerald-400"
+                disabled={isLoading}
+                required
+              />
+              <span>
+                I agree to the{" "}
+                <Link href="/terms" className="text-emerald-300 hover:text-emerald-200">
+                  Terms of Service
+                </Link>{" "}
+                and{" "}
+                <Link href="/privacy" className="text-emerald-300 hover:text-emerald-200">
+                  Privacy Policy
+                </Link>
+                .
+              </span>
+            </label>
+
+            <Button
+              type="submit"
+              disabled={isLoading || mismatch || !formData.acceptTerms}
+              className="h-12 w-full rounded-xl bg-emerald-400 text-[15px] font-semibold text-[#04120c] shadow-[0_8px_30px_-8px_rgba(52,211,153,0.6)] transition-colors hover:bg-emerald-300 disabled:opacity-50 disabled:shadow-none"
+            >
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#04120c] border-t-transparent" />
+                  Creating account
+                </span>
+              ) : (
+                "Create account"
+              )}
+            </Button>
+          </form>
+
+          <p className="mt-8 text-center text-sm text-zinc-500">
+            Already have an account?{" "}
+            <Link href="/signin" className="font-medium text-emerald-300 hover:text-emerald-200">
+              Sign in
+            </Link>
+          </p>
         </div>
-      </div>
+      </main>
     </div>
-  )
+  );
 }

@@ -1,40 +1,35 @@
 "use client";
 
 import type React from "react";
-
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import axios from "axios";
+import Cookies from "js-cookie";
+import { toast } from "sonner";
+import { Bricolage_Grotesque, Instrument_Sans } from "next/font/google";
+import { Eye, EyeOff, Mail, Lock, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Eye,
-  EyeOff,
-  Mail,
-  Lock,
-  ArrowRight,
-  ArrowLeft,
-} from "lucide-react";
-import { toast } from "sonner";
-import axios from "axios";
 import { BACKEND_URL } from "@/lib/utils";
-import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
+
+const display = Bricolage_Grotesque({
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["500", "600", "700"],
+});
+const body = Instrument_Sans({ subsets: ["latin"], variable: "--font-body" });
+
+const inputCls =
+  "h-12 rounded-xl border-white/10 bg-white/[0.04] pl-11 text-[15px] text-white placeholder:text-zinc-600 focus-visible:border-emerald-400/50 focus-visible:ring-emerald-400/20";
+
+// Decorative heartbeat strip for the brand panel
+const DEMO = [40, 55, 35, 60, 45, 50, 38, 65, 42, 100, 48, 52, 36, 58, 44, 49, 61, 39, 54, 47, 43, 57, 41, 50];
 
 export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    remember: false,
-  });
+  const [formData, setFormData] = useState({ email: "", password: "", remember: false });
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
@@ -42,40 +37,31 @@ export default function SignInPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call
     try {
       const response = await axios.post(`${BACKEND_URL}/user/signin`, {
         username: formData.email,
         password: formData.password,
       });
 
-      toast.success("SignIn  Successfully !", {
-        description: "Welcome Back  to the BetterUptime ",
-      });
+      toast.success("Signed in", { description: "Welcome back to BetterUptime." });
       const token = response.data.token;
 
       if (formData.remember) {
-        Cookies.set("token", token, {
-          expires: 1,
-        });
+        Cookies.set("token", token, { expires: 1 });
       } else {
         Cookies.set("token", token, {
-          // ⬇️ security / scope
-          path: "/", // send on every route
-          sameSite: "lax", // or 'strict' / 'none' (if cross‑site over HTTPS)
-          secure: true, // true as long as your site is served over HTTPS
+          path: "/",
+          sameSite: "lax",
+          secure: true,
         });
       }
       router.push("/dashboard");
-
-      console.log("Response From SignIn Successfully : ", response);
     } catch (error) {
       console.log("SignIn failed: ", error);
-      toast.error("SignIn failed !");
+      toast.error("Sign in failed. Check your email and password.");
     }
 
     setIsLoading(false);
-    // Redirect to dashboard or home
   };
 
   const handleInputChange = (field: string, value: string | boolean) => {
@@ -84,225 +70,174 @@ export default function SignInPage() {
 
   useEffect(() => {
     const token = Cookies.get("token");
-    if (token) {
-      router.push("/dashboard");
-    }
+    if (token) router.push("/dashboard");
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-[#0f1419] relative overflow-hidden">
-      {/* Vignette Glow Background */}
-      <div className="absolute inset-0">
-        {/* Main vignette effect */}
+    <div
+      className={`${display.variable} ${body.variable} grid min-h-screen bg-[#07090d] font-[family-name:var(--font-body)] text-zinc-300 antialiased selection:bg-emerald-400/30 lg:grid-cols-[1.05fr_1fr]`}
+    >
+      {/* Brand panel */}
+      <aside className="relative hidden overflow-hidden border-r border-white/[0.06] lg:flex lg:flex-col lg:justify-between lg:p-12">
         <div
-          className="absolute inset-0"
-          style={{
-            background: `
-              radial-gradient(circle at 50% 40%, 
-                rgba(99, 102, 241, 0.15) 0%, 
-                rgba(99, 102, 241, 0.08) 25%, 
-                rgba(15, 20, 25, 0.95) 60%, 
-                rgba(15, 20, 25, 1) 100%
-              )
-            `,
-          }}
+          aria-hidden
+          className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_30%_100%,rgba(52,211,153,0.16),transparent),radial-gradient(ellipse_50%_40%_at_80%_0%,rgba(20,184,166,0.08),transparent)]"
         />
+        <Link href="/" className="relative flex items-center gap-2.5">
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-emerald-300 to-teal-500 shadow-[0_0_28px_-4px_rgba(52,211,153,0.6)]">
+            <span className="h-3.5 w-3.5 rounded-full bg-[#06100d]" />
+          </span>
+          <span className="font-[family-name:var(--font-display)] text-xl font-semibold tracking-tight text-white">
+            BetterUptime
+          </span>
+        </Link>
 
-        {/* Additional glow effects */}
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#6366f1]/10 rounded-full blur-3xl animate-pulse"></div>
-        <div
-          className="absolute bottom-0 right-1/4 w-80 h-80 bg-blue-500/8 rounded-full blur-3xl animate-pulse"
-          style={{ animationDelay: "1s" }}
-        ></div>
-        <div
-          className="absolute top-1/2 left-0 w-64 h-64 bg-purple-500/6 rounded-full blur-3xl animate-pulse"
-          style={{ animationDelay: "2s" }}
-        ></div>
-        <div
-          className="absolute top-1/3 right-0 w-72 h-72 bg-indigo-500/8 rounded-full blur-3xl animate-pulse"
-          style={{ animationDelay: "0.5s" }}
-        ></div>
+        <div className="relative max-w-lg">
+          <h2 className="font-[family-name:var(--font-display)] text-5xl font-semibold leading-[1.05] tracking-tight text-white">
+            Know it&apos;s down before your users do.
+          </h2>
+          <p className="mt-5 text-lg text-zinc-400">
+            Uptime checks, response times and incident history for every website you run.
+          </p>
 
-        {/* Subtle grid pattern */}
-        <div
-          className="absolute inset-0 opacity-5"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
-            `,
-            backgroundSize: "50px 50px",
-          }}
-        />
-      </div>
-
-      {/* Content */}
-      <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
-        <div className="w-full max-w-md">
-          {/* Back to home link */}
-          <Link
-            href="/"
-            className="inline-flex items-center text-gray-400 hover:text-white transition-colors mb-8 group"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-            Back to home
-          </Link>
-
-          <Card className="bg-[#1a1f2e]/80 backdrop-blur-xl border-gray-800/50 shadow-2xl">
-            <CardHeader className="text-center pb-8">
-              {/* Logo */}
-              <div className="flex items-center justify-center space-x-2 mb-6">
-          
-          
-              </div>
-
-              <CardTitle className="text-3xl font-bold text-white mb-2">
-                Welcome back
-              </CardTitle>
-              <CardDescription className="text-gray-400 text-lg">
-                Sign in to your account to continue monitoring
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent className="space-y-6">
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="email"
-                    className="text-gray-300 text-sm font-medium"
-                  >
-                    Email address
-                  </Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={formData.email}
-                      onChange={(e) =>
-                        handleInputChange("email", e.target.value)
-                      }
-                      className="pl-11 h-12 bg-[#0f1419] border-gray-700 text-white placeholder-gray-500 focus:border-[#6366f1] focus:ring-[#6366f1] transition-all"
-                      required
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="password"
-                    className="text-gray-300 text-sm font-medium"
-                  >
-                    Password
-                  </Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
-                      value={formData.password}
-                      onChange={(e) =>
-                        handleInputChange("password", e.target.value)
-                      }
-                      className="pl-11 pr-11 h-12 bg-[#0f1419] border-gray-700 text-white placeholder-gray-500 focus:border-[#6366f1] focus:ring-[#6366f1] transition-all"
-                      required
-                      disabled={isLoading}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
-                      disabled={isLoading}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-5 w-5" />
-                      ) : (
-                        <Eye className="h-5 w-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      id="remember"
-                      type="checkbox"
-                      checked={formData.remember}
-                      onChange={(e) =>
-                        handleInputChange("remember", e.target.checked)
-                      }
-                      className="w-4 h-4 text-[#6366f1] bg-[#0f1419] border-gray-700 rounded focus:ring-[#6366f1] focus:ring-2"
-                      disabled={isLoading}
-                    />
-                    <Label htmlFor="remember" className="text-sm text-gray-400">
-                      Remember me
-                    </Label>
-                  </div>
-                  <Link
-                    href="/forgot-password"
-                    className="text-sm text-[#6366f1] hover:text-[#5855eb] transition-colors"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full bg-[#6366f1] hover:bg-[#5855eb] text-white font-semibold py-3 h-12 transition-all hover:scale-[1.02] disabled:hover:scale-100"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Signing in...</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center space-x-2">
-                      <span>Sign in to your account</span>
-                      <ArrowRight className="h-5 w-5" />
-                    </div>
-                  )}
-                </Button>
-              </form>
-
-              {/* Switch to Sign Up */}
-              <div className="text-center pt-4 border-t border-gray-800">
-                <span className="text-gray-400 text-sm">
-                Don&apos;t have an account?{" "}
+          <div className="mt-10 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 backdrop-blur">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="relative inline-flex h-2.5 w-2.5">
+                  <span className="absolute h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                  <span className="relative h-full w-full rounded-full bg-emerald-400" />
                 </span>
-                <Link
-                  href="/signup"
-                  className="text-[#6366f1] hover:text-[#5855eb] text-sm font-medium transition-colors"
-                >
-                  Sign up for free
-                </Link>
+                <span className="font-medium text-white">example.com</span>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Trust indicators */}
-          <div className="mt-8 text-center">
-            <div className="flex items-center justify-center space-x-6 text-gray-500 text-sm">
-              <div className="flex items-center space-x-2">
-                <span>🔒</span>
-                <span>Secure login</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span>⚡</span>
-                <span>Instant access</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span>🌍</span>
-                <span>Global monitoring</span>
-              </div>
+              <span className="text-sm text-emerald-300">124 ms</span>
+            </div>
+            <div className="mt-4 flex h-10 items-end gap-[3px]" aria-hidden>
+              {DEMO.map((h, i) => (
+                <span
+                  key={i}
+                  style={{ height: `${h}%` }}
+                  className={`flex-1 rounded-full ${h === 100 ? "bg-rose-500" : "bg-emerald-400/90"}`}
+                />
+              ))}
             </div>
           </div>
         </div>
-      </div>
+
+        <p className="relative text-sm text-zinc-500">Checks run around the clock from multiple regions.</p>
+      </aside>
+
+      {/* Form */}
+      <main className="relative flex items-center justify-center p-6 sm:p-10">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(ellipse_60%_100%_at_50%_0%,rgba(52,211,153,0.09),transparent)] lg:hidden"
+        />
+        <div className="relative w-full max-w-[400px]">
+          <Link
+            href="/"
+            className="group mb-10 inline-flex items-center gap-2 text-sm text-zinc-400 transition-colors hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+            Back to home
+          </Link>
+
+          <h1 className="font-[family-name:var(--font-display)] text-4xl font-semibold tracking-tight text-white">
+            Welcome back
+          </h1>
+          <p className="mt-2 text-zinc-400">Sign in to keep an eye on your websites.</p>
+
+          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium text-zinc-300">
+                Email
+              </Label>
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@company.com"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  className={inputCls}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-sm font-medium text-zinc-300">
+                  Password
+                </Label>
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-zinc-400 transition-colors hover:text-emerald-300"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500" />
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Your password"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange("password", e.target.value)}
+                  className={`${inputCls} pr-11`}
+                  required
+                  disabled={isLoading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500 transition-colors hover:text-zinc-200"
+                  disabled={isLoading}
+                >
+                  {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
+                </button>
+              </div>
+            </div>
+
+            <label htmlFor="remember" className="flex cursor-pointer items-center gap-2.5 text-sm text-zinc-400">
+              <input
+                id="remember"
+                type="checkbox"
+                checked={formData.remember}
+                onChange={(e) => handleInputChange("remember", e.target.checked)}
+                className="h-4 w-4 rounded border-white/20 bg-white/5 accent-emerald-400"
+                disabled={isLoading}
+              />
+              Keep me signed in
+            </label>
+
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="h-12 w-full rounded-xl bg-emerald-400 text-[15px] font-semibold text-[#04120c] shadow-[0_8px_30px_-8px_rgba(52,211,153,0.6)] transition-colors hover:bg-emerald-300 disabled:opacity-60"
+            >
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#04120c] border-t-transparent" />
+                  Signing in
+                </span>
+              ) : (
+                "Sign in"
+              )}
+            </Button>
+          </form>
+
+          <p className="mt-8 text-center text-sm text-zinc-500">
+            New to BetterUptime?{" "}
+            <Link href="/signup" className="font-medium text-emerald-300 hover:text-emerald-200">
+              Create a free account
+            </Link>
+          </p>
+        </div>
+      </main>
     </div>
   );
 }

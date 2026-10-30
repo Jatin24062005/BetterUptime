@@ -1,319 +1,86 @@
-import { Check, Star, ArrowRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Fragment } from "react"
+import { Check } from "lucide-react"
+import { Panel, Section, SectionHead } from "@/components/ui-kit"
 
 const plans = [
-  {
-    name: "Free",
-    price: 0,
-    period: "forever",
-    description: "Perfect for personal projects and getting started",
-    features: [
-      "10 monitors",
-      "10 heartbeats",
-      "3-minute checks",
-      "Email alerts",
-      "Status page",
-      "30-day data retention",
-      "Community support",
-    ],
-    limitations: ["Basic alerting only", "Limited integrations"],
-    popular: false,
-    cta: "Get started free",
-    highlight: false,
-  },
-  {
-    name: "Pro",
-    price: 29,
-    period: "month",
-    description: "For growing teams and businesses",
-    features: [
-      "50 monitors",
-      "50 heartbeats",
-      "30-second checks",
-      "Email, SMS & Slack alerts",
-      "Custom status pages",
-      "1-year data retention",
-      "API access",
-      "Team collaboration",
-      "Advanced integrations",
-      "Priority support",
-    ],
-    limitations: [],
-    popular: true,
-    cta: "Start free trial",
-    highlight: true,
-  },
-  {
-    name: "Business",
-    price: 79,
-    period: "month",
-    description: "For larger teams with advanced needs",
-    features: [
-      "200 monitors",
-      "200 heartbeats",
-      "10-second checks",
-      "All alert channels",
-      "White-label status pages",
-      "2-year data retention",
-      "Full API access",
-      "Advanced team features",
-      "Custom integrations",
-      "SLA monitoring",
-      "Dedicated support",
-    ],
-    limitations: [],
-    popular: false,
-    cta: "Start free trial",
-    highlight: false,
-  },
-  {
-    name: "Enterprise",
-    price: "Custom",
-    period: "contact us",
-    description: "For large organizations with specific requirements",
-    features: [
-      "Unlimited monitors",
-      "Unlimited heartbeats",
-      "5-second checks",
-      "Enterprise integrations",
-      "Custom branding",
-      "Unlimited data retention",
-      "On-premise deployment",
-      "SSO & SAML",
-      "Audit logs",
-      "99.99% SLA",
-      "24/7 dedicated support",
-      "Custom development",
-    ],
-    limitations: [],
-    popular: false,
-    cta: "Contact sales",
-    highlight: false,
-  },
+  { name: "Free", price: "$0", per: "/forever", desc: "For personal projects", cta: "Get started free",
+    features: ["10 monitors", "10 heartbeats", "3-minute checks", "Email alerts", "Status page", "30-day retention"] },
+  { name: "Pro", price: "$29", per: "/month", desc: "For growing teams", cta: "Start free trial", popular: true,
+    features: ["50 monitors", "50 heartbeats", "30-second checks", "Email, SMS and Slack alerts", "Custom status pages", "1-year retention", "API access", "Priority support"] },
+  { name: "Business", price: "$79", per: "/month", desc: "For larger teams", cta: "Start free trial",
+    features: ["200 monitors", "200 heartbeats", "10-second checks", "All alert channels", "White-label status pages", "2-year retention", "Full API access", "Dedicated support"] },
+  { name: "Enterprise", price: "Custom", per: "", desc: "For specific requirements", cta: "Contact sales",
+    features: ["Unlimited monitors", "5-second checks", "Custom branding", "SSO and SAML", "Audit logs", "On-premise option", "99.99% SLA", "24/7 dedicated support"] },
 ]
 
-const features = [
-  {
-    category: "Monitoring",
-    items: [
-      { name: "Website monitoring", free: true, pro: true, business: true, enterprise: true },
-      { name: "API monitoring", free: true, pro: true, business: true, enterprise: true },
-      { name: "SSL monitoring", free: true, pro: true, business: true, enterprise: true },
-      { name: "Domain monitoring", free: false, pro: true, business: true, enterprise: true },
-      { name: "Cron monitoring", free: false, pro: true, business: true, enterprise: true },
-      { name: "Transaction monitoring", free: false, pro: false, business: true, enterprise: true },
-    ],
-  },
-  {
-    category: "Alerting",
-    items: [
-      { name: "Email alerts", free: true, pro: true, business: true, enterprise: true },
-      { name: "SMS alerts", free: false, pro: true, business: true, enterprise: true },
-      { name: "Slack integration", free: false, pro: true, business: true, enterprise: true },
-      { name: "PagerDuty integration", free: false, pro: true, business: true, enterprise: true },
-      { name: "Webhook alerts", free: false, pro: true, business: true, enterprise: true },
-      { name: "Custom escalation", free: false, pro: false, business: true, enterprise: true },
-    ],
-  },
-  {
-    category: "Features",
-    items: [
-      { name: "Status pages", free: true, pro: true, business: true, enterprise: true },
-      { name: "Custom branding", free: false, pro: false, business: true, enterprise: true },
-      { name: "API access", free: false, pro: true, business: true, enterprise: true },
-      { name: "Team collaboration", free: false, pro: true, business: true, enterprise: true },
-      { name: "SSO & SAML", free: false, pro: false, business: false, enterprise: true },
-      { name: "Audit logs", free: false, pro: false, business: false, enterprise: true },
-    ],
-  },
+// [feature, first plan that includes it: 0 Free, 1 Pro, 2 Business, 3 Enterprise]
+const table: [string, [string, number][]][] = [
+  ["Monitoring", [["Website monitoring", 0], ["API monitoring", 0], ["SSL monitoring", 0], ["Domain monitoring", 1], ["Cron monitoring", 1], ["Transaction monitoring", 2]]],
+  ["Alerting", [["Email alerts", 0], ["SMS alerts", 1], ["Slack integration", 1], ["PagerDuty integration", 1], ["Webhook alerts", 1], ["Custom escalation", 2]]],
+  ["Platform", [["Status pages", 0], ["API access", 1], ["Team collaboration", 1], ["Custom branding", 2], ["SSO and SAML", 3], ["Audit logs", 3]]],
+]
+
+const faq = [
+  ["Can I change plans anytime?", "Yes. Upgrades and downgrades take effect immediately and are prorated."],
+  ["What happens to my data?", "It’s kept for your plan’s retention period. We never delete data without notice."],
+  ["Is there a free trial?", "All paid plans include a 14-day trial. No credit card required."],
+  ["Do you offer discounts?", "Annual billing is 20% off, with special rates for startups and non-profits."],
 ]
 
 export function Pricing() {
   return (
-    <section id="pricing" className="py-24 bg-[#0f1419]">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <Badge variant="outline" className="border-gray-700 text-gray-400 mb-6">
-            Pricing Plans
-          </Badge>
-          <h2 className="text-4xl sm:text-5xl font-bold mb-6 text-white">Simple, transparent pricing</h2>
-          <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            Choose the perfect plan for your monitoring needs. All plans include our core features with no hidden fees
-            or surprise charges. Start free, upgrade anytime.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-16">
-          {plans.map((plan, index) => (
-            <Card
-              key={index}
-              className={`relative bg-[#1a1f2e] border-gray-800 hover:border-gray-700 transition-all duration-300 ${
-                plan.highlight ? "ring-2 ring-[#6366f1] scale-105" : ""
-              }`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <Badge className="bg-[#6366f1] text-white px-4 py-1">
-                    <Star className="w-4 h-4 mr-1" />
-                    Most Popular
-                  </Badge>
-                </div>
-              )}
-
-              <CardHeader className="text-center pb-8">
-                <CardTitle className="text-2xl font-bold text-white mb-2">{plan.name}</CardTitle>
-                <div className="mb-4">
-                  <span className="text-4xl font-bold text-white">
-                    {typeof plan.price === "number" ? `$${plan.price}` : plan.price}
-                  </span>
-                  <span className="text-gray-400 ml-2">/{plan.period}</span>
-                </div>
-                <CardDescription className="text-gray-300 text-base">{plan.description}</CardDescription>
-              </CardHeader>
-
-              <CardContent className="space-y-6">
-                <ul className="space-y-3">
-                  {plan.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-center space-x-3">
-                      <Check className="h-5 w-5 text-green-400 flex-shrink-0" />
-                      <span className="text-gray-300 text-sm">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                {plan.limitations.length > 0 && (
-                  <div className="border-t border-gray-800 pt-4">
-                    <div className="text-gray-500 text-sm mb-2">Limitations:</div>
-                    <ul className="space-y-2">
-                      {plan.limitations.map((limitation, limitIndex) => (
-                        <li key={limitIndex} className="flex items-center space-x-3">
-                          <div className="w-5 h-5 flex-shrink-0 text-gray-600">−</div>
-                          <span className="text-gray-500 text-sm">{limitation}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                <Button
-                  className={`w-full py-3 text-lg font-semibold transition-all ${
-                    plan.highlight
-                      ? "bg-[#6366f1] hover:bg-[#5855eb] text-white"
-                      : "bg-gray-800 hover:bg-gray-700 text-white border border-gray-700"
-                  }`}
-                >
-                  {plan.cta}
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Feature Comparison Table */}
-        <div className="mb-16">
-          <h3 className="text-2xl font-bold text-white text-center mb-12">Detailed feature comparison</h3>
-
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b border-gray-800">
-                  <th className="text-left text-white font-semibold py-4 px-6">Features</th>
-                  <th className="text-center text-white font-semibold py-4 px-6">Free</th>
-                  <th className="text-center text-white font-semibold py-4 px-6">Pro</th>
-                  <th className="text-center text-white font-semibold py-4 px-6">Business</th>
-                  <th className="text-center text-white font-semibold py-4 px-6">Enterprise</th>
-                </tr>
-              </thead>
-              <tbody>
-                {features.map((category, categoryIndex) => (
-                  <>
-                    <tr key={categoryIndex} className="border-b border-gray-800">
-                      <td colSpan={5} className="text-gray-400 font-medium py-4 px-6 bg-[#1a1f2e]">
-                        {category.category}
-                      </td>
-                    </tr>
-                    {category.items.map((item, itemIndex) => (
-                      <tr key={itemIndex} className="border-b border-gray-800 hover:bg-[#1a1f2e]/50">
-                        <td className="text-gray-300 py-3 px-6">{item.name}</td>
-                        <td className="text-center py-3 px-6">
-                          {item.free ? (
-                            <Check className="h-5 w-5 text-green-400 mx-auto" />
-                          ) : (
-                            <span className="text-gray-600">−</span>
-                          )}
-                        </td>
-                        <td className="text-center py-3 px-6">
-                          {item.pro ? (
-                            <Check className="h-5 w-5 text-green-400 mx-auto" />
-                          ) : (
-                            <span className="text-gray-600">−</span>
-                          )}
-                        </td>
-                        <td className="text-center py-3 px-6">
-                          {item.business ? (
-                            <Check className="h-5 w-5 text-green-400 mx-auto" />
-                          ) : (
-                            <span className="text-gray-600">−</span>
-                          )}
-                        </td>
-                        <td className="text-center py-3 px-6">
-                          {item.enterprise ? (
-                            <Check className="h-5 w-5 text-green-400 mx-auto" />
-                          ) : (
-                            <span className="text-gray-600">−</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </>
-                ))}
-              </tbody>
-            </table>
+    <Section id="pricing">
+      <SectionHead title="Simple, transparent pricing" desc="Start free and upgrade when you need faster checks or more monitors. No hidden fees." />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {plans.map((p) => (
+          <div key={p.name} className={`relative flex flex-col rounded-2xl border p-7 ${p.popular ? "border-[#34e0a1]/40 bg-[#34e0a1]/[0.04] shadow-[0_0_60px_-20px_rgba(52,224,161,0.4)]" : "border-white/[0.07] bg-white/[0.02]"}`}>
+            {p.popular && <span className="absolute right-5 top-5 rounded-full bg-[#34e0a1] px-3 py-1 text-xs font-medium text-black">Most popular</span>}
+            <h3 className="text-lg font-medium text-white">{p.name}</h3>
+            <p className="mt-1 text-sm text-zinc-500">{p.desc}</p>
+            <p className="mt-6 text-4xl font-semibold tracking-tight text-white">{p.price}<span className="ml-1 text-base font-normal text-zinc-500">{p.per}</span></p>
+            <ul className="mt-8 flex-1 space-y-3">
+              {p.features.map((f) => (
+                <li key={f} className="flex items-start gap-3 text-sm text-zinc-300"><Check className="mt-0.5 h-4 w-4 shrink-0 text-[#34e0a1]" />{f}</li>
+              ))}
+            </ul>
+            <button className={`mt-8 h-11 w-full rounded-xl text-sm font-medium transition ${p.popular ? "bg-white text-black hover:bg-zinc-200" : "border border-white/10 text-white hover:bg-white/[0.06]"}`}>{p.cta}</button>
           </div>
-        </div>
-
-        {/* Pricing FAQ */}
-        <div className="text-center">
-          <div className="bg-[#1a1f2e] border border-gray-800 rounded-lg p-8 max-w-4xl mx-auto">
-            <h3 className="text-2xl font-bold text-white mb-6">Frequently asked questions</h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-              <div>
-                <h4 className="text-white font-semibold mb-2">Can I change plans anytime?</h4>
-                <p className="text-gray-400 text-sm">
-                  Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately and are
-                  prorated.
-                </p>
-              </div>
-
-              <div>
-                <h4 className="text-white font-semibold mb-2">What happens to my data?</h4>
-                <p className="text-gray-400 text-sm">
-                  Your monitoring data is retained according to your plan&apos;s data retention policy. We never delete data
-                  without notice.
-                </p>
-              </div>
-
-              <div>
-                <h4 className="text-white font-semibold mb-2">Is there a free trial?</h4>
-                <p className="text-gray-400 text-sm">
-                  Yes, all paid plans come with a 14-day free trial. No credit card required to start.
-                </p>
-              </div>
-
-              <div>
-                <h4 className="text-white font-semibold mb-2">Do you offer discounts?</h4>
-                <p className="text-gray-400 text-sm">
-                  We offer annual billing discounts (20% off) and special rates for startups and non-profits.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
-    </section>
+
+      <Panel className="mt-20 overflow-x-auto">
+        <table className="w-full min-w-[640px] text-sm">
+          <thead>
+            <tr className="border-b border-white/[0.07] text-left text-zinc-400">
+              <th className="px-6 py-4 font-medium">Compare plans</th>
+              {plans.map((p) => <th key={p.name} className="px-6 py-4 text-center font-medium text-white">{p.name}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {table.map(([cat, rows]) => (
+              <Fragment key={cat}>
+                <tr><td colSpan={5} className="bg-white/[0.03] px-6 py-3 text-zinc-400">{cat}</td></tr>
+                {rows.map(([name, min]) => (
+                  <tr key={name} className="border-t border-white/[0.05]">
+                    <td className="px-6 py-3 text-zinc-300">{name}</td>
+                    {plans.map((p, i) => (
+                      <td key={p.name} className="px-6 py-3 text-center">
+                        {i >= min ? <Check className="mx-auto h-4 w-4 text-[#34e0a1]" aria-label="Included" /> : <span className="text-zinc-700" aria-label="Not included">—</span>}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </Fragment>
+            ))}
+          </tbody>
+        </table>
+      </Panel>
+
+      <Panel className="mt-12 grid gap-8 p-8 sm:grid-cols-2">
+        {faq.map(([q, a]) => (
+          <div key={q}><h4 className="font-medium text-white">{q}</h4><p className="mt-2 text-sm leading-relaxed text-zinc-400">{a}</p></div>
+        ))}
+      </Panel>
+    </Section>
   )
 }

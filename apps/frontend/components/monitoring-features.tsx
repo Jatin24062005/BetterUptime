@@ -1,324 +1,94 @@
 "use client"
 
-import { useState } from "react"
-import { Badge } from "@/components/ui/badge"
+import { ReactNode, useState } from "react"
+import { Panel, Section, SectionHead } from "@/components/ui-kit"
 
-const tracerouteSteps = [
-  { step: 1, text: "Start: 2024-04-17T16:53:02+0000", type: "header" },
-  { step: 2, text: "HOST: uptime-edge-us-east-2.uptime-edge_worker-us-east", type: "host" },
-  { step: 3, text: "|-- 172.18.0.1", type: "hop" },
-  { step: 4, text: "|-- 10.204.6.12", type: "hop" },
-  { step: 5, text: "|-- 10.204.35.59", type: "hop" },
-  { step: 6, text: "|-- 10.204.64.37", type: "hop" },
-  { step: 7, text: "|-- lo0-0.gw3.atl1.us.linode.com", type: "hop" },
-  { step: 8, text: "|-- ae48.r11.atl01.ien.netarch.akamai.com", type: "hop" },
-  { step: 9, text: "|-- atl-b24-link.ip.twelve99.net", type: "hop" },
-  { step: 10, text: "|-- atl-bb2-link.ip.twelve99.net", type: "hop" },
-  { step: 11, text: "|-- ash-bb2-link.ip.twelve99.net", type: "hop" },
-]
+const hops = ["172.18.0.1", "10.204.6.12", "10.204.35.59", "10.204.64.37", "lo0-0.gw3.atl1.us.linode.com", "ae48.r11.atl01.ien.netarch.akamai.com", "atl-b24-link.ip.twelve99.net", "ash-bb2-link.ip.twelve99.net"]
+const tabs = ["Traceroute", "MTR", "SSL certificates", "cURL"]
+
+function Row({ title, body, points, flip, children }: { title: string; body: string; points: string[]; flip?: boolean; children: ReactNode }) {
+  return (
+    <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+      <div className={flip ? "lg:order-2" : ""}>
+        <h3 className="text-balance text-3xl font-semibold tracking-tight text-white sm:text-4xl">{title}</h3>
+        <p className="mt-5 max-w-md text-lg leading-relaxed text-zinc-400">{body}</p>
+        <ul className="mt-8 space-y-3">
+          {points.map((p) => (
+            <li key={p} className="flex items-center gap-3 text-zinc-300"><span className="h-1.5 w-1.5 rounded-full bg-[#34e0a1]" />{p}</li>
+          ))}
+        </ul>
+      </div>
+      <div className={flip ? "lg:order-1" : ""}>{children}</div>
+    </div>
+  )
+}
 
 export function MonitoringFeatures() {
-  const [activeTab, setActiveTab] = useState("traceroute")
-  const [selectedRegion, setSelectedRegion] = useState("us-east")
-
-  const regions = [
-    { id: "us-east", name: "🇺🇸 United States", flag: "🇺🇸" },
-    { id: "eu-west", name: "🇪🇺 Europe", flag: "🇪🇺" },
-    { id: "asia", name: "🇯🇵 Asia Pacific", flag: "🇯🇵" },
-    { id: "australia", name: "🇦🇺 Australia", flag: "🇦🇺" },
-  ]
-
-  const statusChecks = [
-    { status: "working", label: "Working", count: 847, color: "bg-blue-600" },
-    { status: "working", label: "Working", count: 723, color: "bg-blue-600" },
-    { status: "error", label: "Error", count: 1, color: "bg-red-600" },
-  ]
-
+  const [tab, setTab] = useState(0)
   return (
-    <section className="py-24 bg-[#0f1419]">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* First Feature Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-32">
-          {/* Terminal/Traceroute Section */}
-          <div className="order-2 lg:order-1">
-            <div className="bg-[#1a1f2e] rounded-lg border border-gray-800 overflow-hidden shadow-2xl">
-              <div className="flex items-center space-x-4 p-4 border-b border-gray-800 bg-[#151a23]">
-                <button
-                  className={`px-3 py-1 rounded text-sm transition-all ${
-                    activeTab === "traceroute" ? "bg-[#2a3441] text-gray-300" : "text-gray-500 hover:text-gray-300"
-                  }`}
-                  onClick={() => setActiveTab("traceroute")}
-                >
-                  Traceroute
-                </button>
-                <button
-                  className={`px-3 py-1 rounded text-sm transition-all ${
-                    activeTab === "mtr" ? "bg-[#2a3441] text-gray-300" : "text-gray-500 hover:text-gray-300"
-                  }`}
-                  onClick={() => setActiveTab("mtr")}
-                >
-                  MTR
-                </button>
-                <button
-                  className={`px-3 py-1 rounded text-sm transition-all ${
-                    activeTab === "ssl" ? "bg-[#2a3441] text-gray-300" : "text-gray-500 hover:text-gray-300"
-                  }`}
-                  onClick={() => setActiveTab("ssl")}
-                >
-                  SSL certificates
-                </button>
-                <button
-                  className={`px-3 py-1 rounded text-sm transition-all ${
-                    activeTab === "curl" ? "bg-[#2a3441] text-gray-300" : "text-gray-500 hover:text-gray-300"
-                  }`}
-                  onClick={() => setActiveTab("curl")}
-                >
-                  cURL
-                </button>
-              </div>
-
-              <div className="p-4">
-                <div className="flex items-center space-x-4 mb-4">
-                  <select
-                    value={selectedRegion}
-                    onChange={(e) => setSelectedRegion(e.target.value)}
-                    className="bg-[#2a3441] text-gray-300 text-sm border border-gray-700 rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {regions.map((region) => (
-                      <option key={region.id} value={region.id}>
-                        {region.name}
-                      </option>
-                    ))}
-                  </select>
-                  <Badge variant="outline" className="border-gray-700 text-gray-400 text-xs">
-                    Live data
-                  </Badge>
-                </div>
-
-                <div className="font-mono text-sm space-y-1 max-h-80 overflow-y-auto">
-                  {tracerouteSteps.map((step, index) => (
-                    <div key={index} className="text-gray-500 hover:bg-gray-800/30 px-2 py-1 rounded transition-colors">
-                      <span className="text-gray-600 mr-4 w-6 inline-block text-right">{step.step}</span>
-                      <span className="text-gray-400">{step.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+    <Section>
+      <SectionHead title="Debug the outage, not the tooling"
+        desc="Every failed check comes with the evidence you need to fix it." />
+      <div className="space-y-28">
+        <Row title="Traceroute and MTR for timeouts"
+          body="See where a request stalls with edge-based traceroute and MTR output from the region that failed."
+          points={["Real-time network path analysis", "Multi-region traceroute", "Automatic timeout detection"]}>
+          <Panel className="overflow-hidden">
+            <div role="tablist" className="flex gap-1 overflow-x-auto border-b border-white/[0.07] p-3">
+              {tabs.map((t, i) => (
+                <button key={t} role="tab" aria-selected={tab === i} onClick={() => setTab(i)}
+                  className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm transition ${tab === i ? "bg-white/10 text-white" : "text-zinc-500 hover:text-zinc-300"}`}>{t}</button>
+              ))}
             </div>
-          </div>
-
-          <div className="order-1 lg:order-2">
-            <Badge variant="outline" className="border-gray-700 text-gray-400 mb-4">
-              Network Diagnostics
-            </Badge>
-            <h3 className="text-3xl sm:text-4xl font-bold text-white mb-6">Traceroute & MTR for timeouts</h3>
-            <p className="text-gray-400 text-lg leading-relaxed mb-8">
-              Understand connection timeouts and request
-              <br />
-              timeouts with edge-based traceroute and
-              <br />
-              MTR outputs. Debug network issues instantly.
-            </p>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span className="text-gray-300">Real-time network path analysis</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                <span className="text-gray-300">Multi-region traceroute capabilities</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                <span className="text-gray-300">Automatic timeout detection</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Second Feature Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-32">
-          <div>
-            <Badge variant="outline" className="border-gray-700 text-gray-400 mb-4">
-              Error Analysis
-            </Badge>
-            <h3 className="text-3xl sm:text-4xl font-bold text-white mb-6">Screenshots & error logs</h3>
-            <p className="text-gray-400 text-lg leading-relaxed mb-8">
-              We record your API&apos;s error message and take a
-              <br />
-              screenshot of your website being down so that you
-              <br />
-              know exactly what happened. Never miss the details.
-            </p>
-
-            <div className="space-y-6">
-              <div className="flex items-center space-x-4">
-                {statusChecks.map((check, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <div className={`w-8 h-8 ${check.color} rounded-full flex items-center justify-center`}>
-                      <span className="text-white text-xs">{check.status === "error" ? "✗" : "✓"}</span>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-sm text-gray-400">{check.label}</div>
-                      <div className="text-xs text-gray-500">{check.count}</div>
-                    </div>
+            <div className="p-5 font-mono text-sm">
+              <p className="mb-3 text-zinc-500">HOST: uptime-edge-us-east-2</p>
+              <div className="max-h-72 space-y-1 overflow-y-auto">
+                {hops.map((h, i) => (
+                  <div key={h} className="flex gap-4 rounded px-2 py-1 hover:bg-white/[0.03]">
+                    <span className="w-5 text-right text-zinc-600">{i + 1}</span><span className="truncate text-zinc-300">{h}</span>
                   </div>
                 ))}
               </div>
-
-              <div className="bg-[#1a1f2e] border border-gray-800 rounded-lg p-4">
-                <div className="text-sm text-gray-400 mb-2">Latest Error Details</div>
-                <div className="font-mono text-xs text-red-400 bg-[#0f1419] p-3 rounded">
-                  HTTP 500 Internal Server Error
-                  <br />
-                  Connection timeout after 30s
-                  <br />
-                  Screenshot captured at 14:32:15 UTC
-                </div>
-              </div>
             </div>
-          </div>
+          </Panel>
+        </Row>
 
-          <div>
-            <div className="bg-[#1a1f2e] rounded-lg border border-gray-800 p-6 shadow-2xl">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
-                  <span className="text-white">🎭</span>
-                </div>
-                <div>
-                  <span className="text-white font-medium">Playwright</span>
-                  <div className="text-gray-400 text-sm">Browser automation</div>
-                </div>
+        <Row flip title="Screenshots and error logs"
+          body="When a site goes down we capture the error message and a screenshot, so you see what your users saw."
+          points={["Screenshot of the failing page", "Full error response and timing", "Playwright transaction checks in real Chrome"]}>
+          <Panel className="space-y-5 p-6">
+            {[["Page load", "2.3s", 75], ["DOM content", "1.8s", 60], ["First paint", "0.9s", 30]].map(([l, v, w]) => (
+              <div key={l as string}>
+                <div className="mb-2 flex justify-between text-sm"><span className="text-zinc-400">{l}</span><span className="text-white">{v}</span></div>
+                <div className="h-1.5 rounded-full bg-white/[0.06]"><div className="h-full rounded-full bg-[#34e0a1]" style={{ width: `${w}%` }} /></div>
               </div>
-
-              <div className="space-y-4 mb-6">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Page Load</span>
-                    <span className="text-green-400">2.3s</span>
-                  </div>
-                  <div className="h-2 bg-gray-800 rounded">
-                    <div
-                      className="h-2 bg-green-400 rounded transition-all duration-1000"
-                      style={{ width: "75%" }}
-                    ></div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">DOM Content</span>
-                    <span className="text-blue-400">1.8s</span>
-                  </div>
-                  <div className="h-2 bg-gray-800 rounded">
-                    <div
-                      className="h-2 bg-blue-400 rounded transition-all duration-1000"
-                      style={{ width: "60%" }}
-                    ></div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">First Paint</span>
-                    <span className="text-purple-400">0.9s</span>
-                  </div>
-                  <div className="h-2 bg-gray-800 rounded">
-                    <div
-                      className="h-2 bg-purple-400 rounded transition-all duration-1000"
-                      style={{ width: "30%" }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-
-              <h4 className="text-white font-semibold mb-3">Playwright transaction monitoring</h4>
-              <p className="text-gray-400 text-sm leading-relaxed">
-                We test all vital interactions by running a real
-                <br />
-                Chrome browser instance, with a full-fledged
-                <br />
-                JavaScript runtime. Catch issues users actually face.
-              </p>
+            ))}
+            <div className="rounded-xl border border-red-400/20 bg-red-400/[0.05] p-4 font-mono text-xs leading-relaxed text-red-300">
+              HTTP 500 Internal Server Error<br />Connection timeout after 30s<br />Screenshot captured at 14:32:15 UTC
             </div>
-          </div>
-        </div>
+          </Panel>
+        </Row>
 
-        {/* Third Feature Row - SSL Monitoring */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div className="order-2 lg:order-1">
-            <div className="bg-[#1a1f2e] rounded-lg border border-gray-800 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h4 className="text-white font-semibold">SSL Certificate Status</h4>
-                <Badge variant="outline" className="border-green-700 text-green-400 bg-green-900/20">
-                  Valid
-                </Badge>
-              </div>
-
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <div className="text-gray-400 mb-1">Issued To</div>
-                    <div className="text-white font-mono">example.com</div>
-                  </div>
-                  <div>
-                    <div className="text-gray-400 mb-1">Issued By</div>
-                    <div className="text-white font-mono">Let&apos;s Encrypt</div>
-                  </div>
-                  <div>
-                    <div className="text-gray-400 mb-1">Valid From</div>
-                    <div className="text-white font-mono">Jan 15, 2024</div>
-                  </div>
-                  <div>
-                    <div className="text-gray-400 mb-1">Expires</div>
-                    <div className="text-white font-mono">Apr 15, 2024</div>
-                  </div>
-                </div>
-
-                <div className="bg-[#0f1419] p-4 rounded-lg border border-gray-800">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-gray-400 text-sm">Certificate expires in</span>
-                    <span className="text-orange-400 font-semibold">23 days</span>
-                  </div>
-                  <div className="w-full bg-gray-800 rounded-full h-2">
-                    <div className="bg-orange-400 h-2 rounded-full" style={{ width: "25%" }}></div>
-                  </div>
-                </div>
-
-                <div className="text-xs text-gray-400">⚠️ Renewal reminder will be sent in 7 days</div>
-              </div>
+        <Row title="SSL certificate monitoring"
+          body="Get alerts before a certificate expires, and watch certificate health across every domain."
+          points={["Automatic certificate discovery", "Expiry alerts at 30, 7 and 1 day", "Certificate chain validation"]}>
+          <Panel className="p-6">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium text-white">SSL certificate</h4>
+              <span className="rounded-full border border-[#34e0a1]/30 bg-[#34e0a1]/10 px-3 py-1 text-xs text-[#34e0a1]">Valid</span>
             </div>
-          </div>
-
-          <div className="order-1 lg:order-2">
-            <Badge variant="outline" className="border-gray-700 text-gray-400 mb-4">
-              Security Monitoring
-            </Badge>
-            <h3 className="text-3xl sm:text-4xl font-bold text-white mb-6">SSL Certificate monitoring</h3>
-            <p className="text-gray-400 text-lg leading-relaxed mb-8">
-              Never let your SSL certificates expire again. Get automatic
-              <br />
-              alerts before expiration and monitor certificate health
-              <br />
-              across all your domains and subdomains.
-            </p>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span className="text-gray-300">Automatic certificate discovery</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                <span className="text-gray-300">Expiration alerts (30, 7, 1 day)</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                <span className="text-gray-300">Certificate chain validation</span>
-              </div>
+            <dl className="mt-6 grid grid-cols-2 gap-5 text-sm">
+              {[["Issued to", "example.com"], ["Issued by", "Let’s Encrypt"], ["Valid from", "Jan 15, 2027"], ["Expires", "Apr 15, 2027"]].map(([k, v]) => (
+                <div key={k}><dt className="text-zinc-500">{k}</dt><dd className="mt-1 font-mono text-white">{v}</dd></div>
+              ))}
+            </dl>
+            <div className="mt-6 rounded-xl border border-white/[0.07] p-4">
+              <div className="flex justify-between text-sm"><span className="text-zinc-400">Expires in</span><span className="font-medium text-amber-400">23 days</span></div>
+              <div className="mt-3 h-1.5 rounded-full bg-white/[0.06]"><div className="h-full w-1/4 rounded-full bg-amber-400" /></div>
             </div>
-          </div>
-        </div>
+          </Panel>
+        </Row>
       </div>
-    </section>
+    </Section>
   )
 }
