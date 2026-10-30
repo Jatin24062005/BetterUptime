@@ -1,5 +1,13 @@
-import { Bricolage_Grotesque, Instrument_Sans } from "next/font/google"
+import localFont from "next/font/local";
 
-// same pair as the sign-in / sign-up pages
-export const display = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-display", weight: ["500", "600", "700"] })
-export const body = Instrument_Sans({ subsets: ["latin"], variable: "--font-body" })
+export const display = localFont({
+  src: "../public/fonts/bricolage-grotesque.ttf",
+  variable: "--font-display",
+  display: "swap",
+});
+
+export const body = localFont({
+  src: "../public/fonts/instrument-sans.ttf",
+  variable: "--font-body",
+  display: "swap",
+});
