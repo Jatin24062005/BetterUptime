@@ -205,12 +205,11 @@ export default function DashboardPage() {
         headers: { "Content-Type": "application/json", authorization: token },
       });
 
-      const raw = Array.isArray(res.data.websites)
-        ? res.data.websites
-        : Object.values(res.data.websites || {});
+const raw: ApiWebsite[] = Array.isArray(res.data.websites)
+  ? (res.data.websites as ApiWebsite[])
+  : (Object.values(res.data.websites || {}) as ApiWebsite[]);
 
-      const data: Website[] = raw.map((w) => {
-        const site = w as ApiWebsite;
+const data: Website[] = raw.map((site: ApiWebsite) => {
         const ticks = Array.isArray(site.ticks)
           ? site.ticks
           : site.ticks
