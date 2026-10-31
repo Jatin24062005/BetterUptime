@@ -52,9 +52,9 @@ export default function SignUpPage() {
         username: formData.email,
         password: formData.password,
       });
-
+      Cookies.set("token", response.data.token, { expires: 7 });
       toast.success("Account created", { description: "Welcome to BetterUptime." });
-      router.push("/");
+      router.push("/dashboard");
       console.log("signUp SuccessFull Response : ", response);
     } catch (err) {
       console.log("SignUp failed !", err);

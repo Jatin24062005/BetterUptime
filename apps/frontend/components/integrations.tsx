@@ -36,9 +36,6 @@ export function Integrations() {
             <div key={l}><dt className="text-2xl font-semibold tracking-tight text-white">{v}</dt><dd className="mt-1 text-sm text-zinc-500">{l}</dd></div>
           ))}
         </dl>
-        <Link href="/integrations" className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-6 py-3 text-sm text-zinc-200 transition hover:bg-white/[0.05]">
-          Browse integrations <ArrowRight className="h-4 w-4" />
-        </Link>
       </div>
     </Section>
   )

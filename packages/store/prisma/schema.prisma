@@ -17,40 +17,124 @@ datasource db {
 
 model User {
   id       String    @id @default(uuid())
-  username String
-  password String
+  username String    @unique
+  mobile   String?
+
   websites Website[]
 }
 
 model Website {
-  id        String        @id @default(uuid())
+  id        String   @id @default(uuid())
   userId    String
+  name      String?
   url       String
-  timeAdded DateTime      @default(now())
-  ticks     WebsiteTick[]
-  User      User          @relation(fields: [userId], references: [id])
+  timeAdded DateTime @default(now())
+
+  user    User                 @relation(fields: [userId], references: [id])
+  ticks   WebsiteTick[]
+  states  WebsiteRegionState[]
+  incidents Incident[]
 }
 
 model Region {
-  id   String @id @default(uuid())
-  name String
+  id    String @id @default(uuid())
+  name  String
 
-  ticks WebsiteTick[]
+  ticks  WebsiteTick[]
+  states WebsiteRegionState[]
+  incidents Incident[]
 }
 
 model WebsiteTick {
   id           String        @id @default(uuid())
-  responseTime Int
+  responseTime Int?
   status       WebsiteStatus
-  regionId     String
-  websiteId    String
-  website      Website       @relation(fields: [websiteId], references: [id])
-  region       Region        @relation(fields: [regionId], references: [id])
-  createdAt    DateTime      @default(now())
+  errorMessage String?
+
+  regionId  String
+  websiteId String
+
+  website Website @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  region  Region  @relation(fields: [regionId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([websiteId, createdAt])
+  @@index([websiteId, regionId, createdAt])
+}
+
+model WebsiteRegionState {
+  id               String        @id @default(uuid())
+  websiteId        String
+  regionId         String
+  currentStatus    WebsiteStatus @default(UNKNOWN)
+  outageStartedAt  DateTime?
+  lastCheckedAt    DateTime      @default(now())
+
+  website Website @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  region  Region  @relation(fields: [regionId], references: [id])
+
+  @@unique([websiteId, regionId])
+}
+
+model Incident {
+  id          String    @id @default(uuid())
+  websiteId   String
+  regionId    String
+
+  startedAt   DateTime  @default(now())
+  resolvedAt  DateTime?
+  duration    Int?
+
+  website Website @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  region  Region  @relation(fields: [regionId], references: [id])
+
+  notifications Notification[]
+
+  @@index([websiteId, startedAt])
+  @@index([websiteId, resolvedAt])
+  @@index([regionId, startedAt])
+}
+
+model Notification {
+  id          String             @id @default(uuid())
+  incidentId  String
+  type        NotificationType
+  channel     NotificationChannel @default(SMS)
+  status      NotificationStatus  @default(PENDING)
+
+  recipient   String
+  message     String
+  error       String?
+  attempts    Int                 @default(0)
+
+  sentAt      DateTime?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  incident Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@unique([incidentId, type, channel])
+  @@index([status, createdAt])
 }
 
 enum WebsiteStatus {
   UP
   DOWN
   UNKNOWN
+}
+
+enum NotificationType {
+  DOWN
+  RECOVERY
+}
+
+enum NotificationChannel {
+  SMS
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
 }

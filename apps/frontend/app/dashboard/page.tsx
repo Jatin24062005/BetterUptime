@@ -31,6 +31,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -60,18 +61,72 @@ type Status = "up" | "down" | "checking";
 
 type Website = {
   id: string;
+  name: string;
   url: string;
   status: Status;
   responseTime: number;
   lastChecked: string;
 };
 
-type Tick = { status: string; responseTime: number; createdAt: string };
-type ApiWebsite = { id: string; url: string; ticks?: Tick[] | Tick };
-type Beat = { s: Status; r: number };
+type Tick = {
+  id?: string;
+  status: string;
+  responseTime: number | null;
+  createdAt: string;
+};
 
+type ApiWebsite = {
+  id: string;
+  name?: string;
+  url: string;
+  ticks?: Tick[] | Tick;
+  states?: { currentStatus: string; lastCheckedAt?: string }[];
+  incidents?: ApiIncident[];
+};
+
+type ApiIncident = {
+  id: string;
+  websiteId: string;
+  regionId: string;
+  startedAt: string;
+  resolvedAt: string | null;
+  duration: number | null;
+  region?: { id: string; name: string };
+};
+
+type DashboardIncident = ApiIncident & {
+  websiteName: string;
+  websiteUrl: string;
+};
+
+type ApiNotification = {
+  id: string;
+  type: "DOWN" | "RECOVERY";
+  status: string;
+  message: string;
+  recipient: string;
+  createdAt: string;
+  sentAt?: string | null;
+};
+
+type Profile = {
+  id: string;
+  username: string;
+  mobile: string | null;
+};
+
+type Beat = {
+  id: string;
+  s: Status;
+  r: number;
+  hint: string;
+};
+
+// The overview strip represents individual recent checks, not 24-hour buckets.
+// Each saved tick becomes one bar so the strip visibly advances on every poll.
 const HISTORY_LENGTH = 36;
-const POLL_MS = 5000;
+const POLL_MS = 3000;
+const INCIDENT_POLL_MS = 30000;
 
 const normalize = (s?: string): Status => {
   const v = (s || "").toLowerCase();
@@ -79,6 +134,32 @@ const normalize = (s?: string): Status => {
   if (v === "down") return "down";
   return "checking";
 };
+
+// Render the latest 36 real checks as individual bars.
+// API results are usually newest-first; sort oldest-first so the newest tick
+// appears on the right, like a live monitoring timeline.
+function buildRecentTickBeats(ticks: Tick[]): Beat[] {
+  return [...ticks]
+    .filter((tick) => Number.isFinite(new Date(tick.createdAt).getTime()))
+    .sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    )
+    .slice(-HISTORY_LENGTH)
+    .map((tick, index) => {
+      const timestamp = new Date(tick.createdAt);
+      return {
+        id: tick.id || `${timestamp.getTime()}-${index}`,
+        s: normalize(tick.status),
+        r: typeof tick.responseTime === "number" ? tick.responseTime : 0,
+        hint: timestamp.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }),
+      };
+    });
+}
 
 const STATUS_STYLE: Record<
   Status,
@@ -134,22 +215,35 @@ function Pulse({ status, size = "h-2.5 w-2.5" }: { status: Status; size?: string
 }
 
 function BeatStrip({ beats }: { beats: Beat[] }) {
-  const slots = Array.from({ length: HISTORY_LENGTH }, (_, i) => {
-    const idx = i - (HISTORY_LENGTH - beats.length);
-    return idx >= 0 ? beats[idx] : null;
-  });
-  const max = Math.max(200, ...beats.map((b) => b.r));
+  const slots = Array.from({ length: HISTORY_LENGTH }, (_, index) => beats[index] || null);
+  const max = Math.max(200, ...beats.map((beat) => beat.r));
+
   return (
-    <div className="flex h-9 items-end gap-[3px]" aria-hidden>
-      {slots.map((b, i) => {
-        if (!b)
-          return <span key={i} className="h-2 w-[5px] rounded-full bg-white/[0.06]" />;
-        const h = b.s === "down" ? 100 : Math.max(22, Math.min(100, (b.r / max) * 100));
+    <div
+      className="flex h-9 w-[min(100%,18rem)] items-end gap-[3px]"
+      aria-label={`Latest ${beats.length} website checks`}
+    >
+      {slots.map((beat, index) => {
+        if (!beat || beat.s === "checking") {
+          return (
+            <span
+              key={beat?.id || `empty-${index}`}
+              title={beat ? `Checking · ${beat.hint}` : "Waiting for next check"}
+              className="h-2 min-w-[5px] flex-1 rounded-full bg-white/[0.06] transition-all duration-300"
+            />
+          );
+        }
+
+        const height = beat.s === "down"
+          ? 100
+          : Math.max(22, Math.min(100, (beat.r / max) * 100));
+
         return (
           <span
-            key={i}
-            style={{ height: `${h}%` }}
-            className={`w-[5px] rounded-full opacity-90 ${STATUS_STYLE[b.s].bar}`}
+            key={beat.id}
+            title={`${beat.s === "up" ? "Operational" : "Down"} · ${beat.hint}${beat.r ? ` · ${beat.r} ms` : ""}`}
+            style={{ height: `${height}%` }}
+            className={`min-w-[5px] flex-1 rounded-full opacity-90 transition-all duration-300 ease-out ${STATUS_STYLE[beat.s].bar}`}
           />
         );
       })}
@@ -191,7 +285,100 @@ export default function DashboardPage() {
   const [websiteName, setWebsiteName] = useState("");
   const [websites, setWebsites] = useState<Website[]>([]);
   const [history, setHistory] = useState<Record<string, Beat[]>>({});
+  const [notifications, setNotifications] = useState<ApiNotification[]>([]);
+  const [recentIncidents, setRecentIncidents] = useState<DashboardIncident[]>([]);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loaded, setLoaded] = useState(false);
+
+  // Mobile number onboarding for SMS outage alerts.
+  const [isMobileDialogOpen, setIsMobileDialogOpen] = useState(false);
+  const [mobileNumber, setMobileNumber] = useState("");
+  const [mobileSaving, setMobileSaving] = useState(false);
+  const [mobileError, setMobileError] = useState("");
+
+  const profileName = profile?.username
+    ? profile.username.includes("@")
+      ? profile.username.split("@")[0]
+      : profile.username
+    : "Your account";
+  const profileInitial = profileName.charAt(0).toUpperCase() || "U";
+
+  useEffect(() => {
+    if (!token) return;
+
+    let isActive = true;
+
+    const loadProfile = async () => {
+      try {
+        const res = await axios.get(`${BACKEND_URL}/user/me`, {
+          headers: { "Content-Type": "application/json", authorization: token },
+        });
+
+        if (!isActive) return;
+        setProfile(res.data?.user || null);
+        setIsMobileDialogOpen(Boolean(res.data?.requiresMobileSetup));
+      } catch (error) {
+        console.error("Unable to load user profile:", error);
+      }
+    };
+
+    loadProfile();
+
+    return () => {
+      isActive = false;
+    };
+  }, [token]);
+
+  const fetchNotifications = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await axios.get(`${BACKEND_URL}/notifications`, {
+        headers: { "Content-Type": "application/json", authorization: token },
+      });
+      setNotifications(Array.isArray(res.data?.notifications) ? res.data.notifications : []);
+    } catch (error) {
+      console.error("Unable to fetch notifications:", error);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
+
+  const handleMobileSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!/^[6-9]\d{9}$/.test(mobileNumber)) {
+      setMobileError("Enter a valid 10-digit Indian mobile number.");
+      return;
+    }
+
+    try {
+      setMobileSaving(true);
+      setMobileError("");
+
+      await axios.patch(
+        `${BACKEND_URL}/user/mobile`,
+        { mobile: mobileNumber },
+        { headers: { "Content-Type": "application/json", authorization: token } }
+      );
+
+      setProfile((current) => current ? { ...current, mobile: mobileNumber } : current);
+      setIsMobileDialogOpen(false);
+      setMobileNumber("");
+      toast.success("SMS alerts enabled", {
+        description: "You'll receive an alert when a monitored website goes down.",
+      });
+    } catch (error: any) {
+      const message =
+        error.response?.data?.message || "Couldn't save your number. Please try again.";
+      setMobileError(message);
+    } finally {
+      setMobileSaving(false);
+    }
+  };
 
   const handleSignout = () => {
     Cookies.remove("token");
@@ -200,29 +387,44 @@ export default function DashboardPage() {
   };
 
   const fetchWebsites = useCallback(async () => {
+    if (!token) {
+      setLoaded(true);
+      return;
+    }
+
     try {
       const res = await axios.get(`${BACKEND_URL}/websites`, {
         headers: { "Content-Type": "application/json", authorization: token },
       });
 
-const raw: ApiWebsite[] = Array.isArray(res.data.websites)
-  ? (res.data.websites as ApiWebsite[])
-  : (Object.values(res.data.websites || {}) as ApiWebsite[]);
+      const raw: ApiWebsite[] = Array.isArray(res.data?.websites)
+        ? res.data.websites
+        : Object.values(res.data?.websites || {});
 
-const data: Website[] = raw.map((site: ApiWebsite) => {
+      const data: Website[] = raw.map((site) => {
         const ticks = Array.isArray(site.ticks)
           ? site.ticks
           : site.ticks
             ? [site.ticks]
             : [];
-        const first = ticks[0];
+        // /websites returns the newest tick first.
+        const latestTick = ticks[0];
+        const fallbackName = (() => {
+          try {
+            return new URL(site.url).hostname;
+          } catch {
+            return site.url;
+          }
+        })();
+
         return {
           id: site.id,
+          name: site.name?.trim() || fallbackName,
           url: site.url,
-          status: normalize(first?.status),
-          responseTime: first?.responseTime || 0,
-          lastChecked: first?.createdAt
-            ? new Date(first.createdAt).toLocaleTimeString([], {
+          status: normalize(latestTick?.status || site.states?.[0]?.currentStatus),
+          responseTime: latestTick?.responseTime || 0,
+          lastChecked: latestTick?.createdAt
+            ? new Date(latestTick.createdAt).toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
                 second: "2-digit",
@@ -231,19 +433,31 @@ const data: Website[] = raw.map((site: ApiWebsite) => {
         };
       });
 
+      // Build the overview bars directly from saved database ticks. Since this
+      // request runs every 3 seconds, a newly saved check appears without
+      // waiting for the slower 24-hour analytics refresh.
+      setHistory(
+        Object.fromEntries(
+          raw.map((site) => {
+            const ticks = Array.isArray(site.ticks)
+              ? site.ticks
+              : site.ticks
+                ? [site.ticks]
+                : [];
+            return [site.id, buildRecentTickBeats(ticks)];
+          })
+        )
+      );
+
       setWebsites(data);
-      setHistory((prev) => {
-        const next = { ...prev };
-        data.forEach((w) => {
-          const list = next[w.id] ? [...next[w.id]] : [];
-          list.push({ s: w.status, r: w.responseTime });
-          next[w.id] = list.slice(-HISTORY_LENGTH);
-        });
-        return next;
-      });
       setLoaded(true);
-    } catch (e) {
-      console.log("Error while fetching websites : ", e);
+    } catch (error: any) {
+      // The API currently responds with 404 when a user has no monitors.
+      if (error.response?.status !== 404) {
+        console.error("Error while fetching websites:", error);
+      }
+      setWebsites([]);
+      setHistory({});
       setLoaded(true);
     }
   }, [token]);
@@ -254,31 +468,99 @@ const data: Website[] = raw.map((site: ApiWebsite) => {
     return () => clearInterval(interval);
   }, [fetchWebsites]);
 
+  // Incident history is loaded separately. The overview tick strip is loaded
+  // from the most recent saved ticks in /websites on the 3-second live poll.
+  const websiteMetaKey = JSON.stringify(
+    websites.map(({ id, name, url }) => ({ id, name, url }))
+  );
+
+  useEffect(() => {
+    if (!token || websites.length === 0) {
+      setRecentIncidents([]);
+      return;
+    }
+
+    let isActive = true;
+    const siteMeta: { id: string; name: string; url: string }[] = JSON.parse(websiteMetaKey);
+
+    const loadIncidents = async () => {
+      const incidentResults = await Promise.all(
+        siteMeta.map(async (site) => {
+          try {
+            const response = await axios.get(
+              `${BACKEND_URL}/websites/${site.id}/incidents`,
+              {
+                headers: { "Content-Type": "application/json", authorization: token },
+              }
+            );
+            const incidents: ApiIncident[] = Array.isArray(response.data?.incidents)
+              ? response.data.incidents
+              : [];
+            return incidents.map((incident) => ({
+              ...incident,
+              websiteName: site.name,
+              websiteUrl: site.url,
+            }));
+          } catch (error) {
+            console.error(`Unable to load incidents for ${site.name}:`, error);
+            return [] as DashboardIncident[];
+          }
+        })
+      );
+
+      if (!isActive) return;
+      setRecentIncidents(
+        incidentResults
+          .flat()
+          .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
+          .slice(0, 6)
+      );
+    };
+
+    loadIncidents();
+    const interval = setInterval(loadIncidents, INCIDENT_POLL_MS);
+
+    return () => {
+      isActive = false;
+      clearInterval(interval);
+    };
+  }, [token, websiteMetaKey]);
+
   const handleAddWebsite = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const trimmedName = websiteName.trim();
+    const trimmedUrl = websiteUrl.trim();
+
+    if (!trimmedName || !trimmedUrl) {
+      toast.error("Enter both a website name and URL.");
+      return;
+    }
+
     try {
       await axios.post(
         `${BACKEND_URL}/website`,
-        { url: websiteUrl },
+        { name: trimmedName, url: trimmedUrl },
         { headers: { "Content-Type": "application/json", authorization: token } }
       );
-      fetchWebsites();
+
+      await fetchWebsites();
       toast.success("Monitor added", {
-        description: `${websiteName || websiteUrl} is now being checked.`,
+        description: `${trimmedName} is now being checked.`,
       });
-    } catch (err) {
-      console.log("Failed to Add Website !", err);
-      toast.error("Couldn't add the monitor. Check the URL and try again.");
+      setWebsiteUrl("");
+      setWebsiteName("");
+      setIsAddWebsiteOpen(false);
+    } catch (error: any) {
+      console.error("Failed to add website:", error);
+      toast.error(error.response?.data?.message || "Couldn't add the monitor. Check the name and URL.");
     }
-    setWebsiteUrl("");
-    setWebsiteName("");
-    setIsAddWebsiteOpen(false);
   };
 
   const filtered = useMemo(
     () =>
       websites.filter((w) =>
-        w.url.toLowerCase().includes(searchQuery.toLowerCase())
+        `${w.name} ${w.url}`.toLowerCase().includes(searchQuery.toLowerCase())
       ),
     [websites, searchQuery]
   );
@@ -292,8 +574,9 @@ const data: Website[] = raw.map((site: ApiWebsite) => {
     ? Math.round(withTime.reduce((s, w) => s + w.responseTime, 0) / withTime.length)
     : 0;
   const allBeats = Object.values(history).flat();
-  const uptime = allBeats.length
-    ? ((allBeats.filter((b) => b.s === "up").length / allBeats.length) * 100).toFixed(2)
+  const measuredBeats = allBeats.filter((beat) => beat.s !== "checking");
+  const uptime = measuredBeats.length
+    ? ((measuredBeats.filter((beat) => beat.s === "up").length / measuredBeats.length) * 100).toFixed(2)
     : "—";
 
   const overall: Status = downSites.length
@@ -317,6 +600,18 @@ const data: Website[] = raw.map((site: ApiWebsite) => {
     } catch {
       return url;
     }
+  };
+
+  const formatIncidentDuration = (incident: DashboardIncident) => {
+    const seconds = incident.duration ?? Math.max(
+      0,
+      Math.floor((Date.now() - new Date(incident.startedAt).getTime()) / 1000)
+    );
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    if (minutes > 0) return `${minutes}m`;
+    return `${seconds}s`;
   };
 
   const navItem =
@@ -361,12 +656,14 @@ const data: Website[] = raw.map((site: ApiWebsite) => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] p-2.5 text-left transition-colors hover:bg-white/[0.06]">
-                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-zinc-600 to-zinc-800 text-sm font-semibold text-white">
-                    C
+                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-emerald-400/80 to-teal-700 text-sm font-semibold text-[#06100d]">
+                    {profileInitial}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium text-white">Cameron</span>
-                    <span className="block text-xs text-zinc-500">Pro plan</span>
+                    <span className="block truncate text-sm font-medium text-white">{profileName}</span>
+                    <span className="block truncate text-xs text-zinc-500">
+                      {profile?.mobile ? `+91 ${profile.mobile}` : "Mobile alerts not set"}
+                    </span>
                   </span>
                   <ChevronsUpDown className="h-4 w-4 text-zinc-500" />
                 </button>
@@ -376,6 +673,9 @@ const data: Website[] = raw.map((site: ApiWebsite) => {
                 side="top"
                 className="w-52 border-white/10 bg-[#0e1218] text-zinc-300"
               >
+                <DropdownMenuLabel className="font-normal text-zinc-500">
+                  {profile?.username || "Signed-in account"}
+                </DropdownMenuLabel>
                 <DropdownMenuItem className="focus:bg-white/[0.06] focus:text-white">
                   <Settings className="mr-2 h-4 w-4" /> Settings
                 </DropdownMenuItem>
@@ -412,14 +712,45 @@ const data: Website[] = raw.map((site: ApiWebsite) => {
             </div>
 
             <div className="ml-auto flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 rounded-lg text-zinc-400 hover:bg-white/[0.06] hover:text-white"
-                aria-label="Notifications"
-              >
-                <Bell className="h-4 w-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative h-9 w-9 rounded-lg text-zinc-400 hover:bg-white/[0.06] hover:text-white"
+                    aria-label="Notifications"
+                  >
+                    <Bell className="h-4 w-4" />
+                    {notifications.length > 0 && (
+                      <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[min(21rem,calc(100vw-2rem))] border-white/10 bg-[#0e1218] p-2 text-zinc-300">
+                  <DropdownMenuLabel className="flex items-center justify-between px-2 py-2 text-white">
+                    <span>Recent alerts</span>
+                    <span className="text-xs font-normal text-zinc-500">{notifications.length}</span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-white/10" />
+                  {notifications.length === 0 ? (
+                    <DropdownMenuItem disabled className="py-4 text-xs text-zinc-500">
+                      No notifications yet.
+                    </DropdownMenuItem>
+                  ) : (
+                    notifications.slice(0, 8).map((notification) => (
+                      <DropdownMenuItem key={notification.id} className="items-start whitespace-normal py-2.5 focus:bg-white/[0.06] focus:text-white">
+                        <span className={`mr-2 mt-1.5 h-2 w-2 shrink-0 rounded-full ${notification.type === "DOWN" ? "bg-rose-400" : "bg-emerald-400"}`} />
+                        <span className="min-w-0">
+                          <span className="block text-xs leading-5 text-zinc-200">{notification.message}</span>
+                          <span className="mt-1 block text-[11px] text-zinc-500">
+                            {new Date(notification.createdAt).toLocaleString()} · {notification.status.toLowerCase()}
+                          </span>
+                        </span>
+                      </DropdownMenuItem>
+                    ))
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               <Dialog open={isAddWebsiteOpen} onOpenChange={setIsAddWebsiteOpen}>
                 <DialogTrigger asChild>
@@ -440,6 +771,19 @@ const data: Website[] = raw.map((site: ApiWebsite) => {
 
                   <form onSubmit={handleAddWebsite} className="mt-2 space-y-5">
                     <div className="space-y-2">
+                      <Label htmlFor="websiteName" className="text-sm text-zinc-300">
+                        Website name
+                      </Label>
+                      <Input
+                        id="websiteName"
+                        placeholder="My production website"
+                        value={websiteName}
+                        onChange={(e) => setWebsiteName(e.target.value)}
+                        className="h-11 rounded-lg border-white/10 bg-white/[0.04] text-white placeholder:text-zinc-600 focus-visible:border-emerald-400/50 focus-visible:ring-emerald-400/20"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
                       <Label htmlFor="websiteUrl" className="text-sm text-zinc-300">
                         Website URL
                       </Label>
@@ -453,18 +797,6 @@ const data: Website[] = raw.map((site: ApiWebsite) => {
                         required
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="websiteName" className="text-sm text-zinc-300">
-                        Display name <span className="text-zinc-600">(optional)</span>
-                      </Label>
-                      <Input
-                        id="websiteName"
-                        placeholder="My website"
-                        value={websiteName}
-                        onChange={(e) => setWebsiteName(e.target.value)}
-                        className="h-11 rounded-lg border-white/10 bg-white/[0.04] text-white placeholder:text-zinc-600 focus-visible:border-emerald-400/50 focus-visible:ring-emerald-400/20"
-                      />
-                    </div>
                     <div className="flex justify-end gap-2 pt-2">
                       <Button
                         type="button"
@@ -476,7 +808,7 @@ const data: Website[] = raw.map((site: ApiWebsite) => {
                       </Button>
                       <Button
                         type="submit"
-                        disabled={!websiteUrl}
+                        disabled={!websiteUrl.trim() || !websiteName.trim()}
                         className="rounded-lg bg-emerald-400 font-semibold text-[#04120c] hover:bg-emerald-300 disabled:opacity-40"
                       >
                         Add monitor
@@ -491,6 +823,9 @@ const data: Website[] = raw.map((site: ApiWebsite) => {
           <main className="mx-auto max-w-6xl px-5 pb-16 pt-10 sm:px-8">
             {/* status headline */}
             <section>
+              <p className="mb-3 text-xs font-medium uppercase tracking-[0.16em] text-zinc-500">
+                Overview <span className="mx-1 text-zinc-700">/</span> Welcome back, <span className="text-zinc-300">{profileName}</span>
+              </p>
               <div className="flex items-center gap-3">
                 <Pulse status={overall} size="h-3 w-3" />
                 <span className={`text-sm font-medium ${STATUS_STYLE[overall].text}`}>
@@ -504,7 +839,7 @@ const data: Website[] = raw.map((site: ApiWebsite) => {
                 {total === 0
                   ? "Add your first website to start tracking uptime and response time."
                   : downSites.length
-                    ? `Affected: ${downSites.map((w) => host(w.url)).join(", ")}`
+                    ? `Affected: ${downSites.map((w) => w.name).join(", ")}`
                     : `${total} ${total === 1 ? "website is" : "websites are"} being checked continuously.`}
               </p>
             </section>
@@ -513,10 +848,10 @@ const data: Website[] = raw.map((site: ApiWebsite) => {
             <section className="mt-10 flex flex-col divide-y divide-white/[0.07] rounded-2xl border border-white/[0.07] bg-white/[0.02] px-6 sm:flex-row sm:divide-x sm:divide-y-0">
               <Stat label="Monitors" value={total} hint={`${upCount} up · ${downSites.length} down`} />
               <Stat
-                label="Uptime this session"
+                label="Recent uptime"
                 value={uptime}
                 unit={uptime === "—" ? "" : "%"}
-                hint="Based on live checks"
+                hint={`Based on the latest ${HISTORY_LENGTH} checks per monitor`}
               />
               <Stat
                 label="Avg response time"
@@ -533,12 +868,17 @@ const data: Website[] = raw.map((site: ApiWebsite) => {
 
             {/* monitors */}
             <section className="mt-12">
-              <div className="mb-4 flex items-end justify-between">
-                <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold tracking-tight text-white">
-                  Monitors
-                </h2>
-                <span className="text-sm text-zinc-500">
-                  {filtered.length} of {total}
+              <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold tracking-tight text-white">
+                    Monitors
+                  </h2>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Live checks · latest {HISTORY_LENGTH} ticks · updates every 3 seconds
+                  </p>
+                </div>
+                <span className="text-xs text-zinc-500">
+                  {filtered.length} / {total} monitors
                 </span>
               </div>
 
@@ -589,12 +929,12 @@ const data: Website[] = raw.map((site: ApiWebsite) => {
                         >
                           <Pulse status={w.status} />
                           <div className="min-w-0">
-                            <p className="truncate font-medium text-white">{host(w.url)}</p>
-                            <p className="truncate text-sm text-zinc-500">{w.url}</p>
+                            <p className="truncate font-medium text-white">{w.name}</p>
+                            <p className="truncate text-sm text-zinc-500">{host(w.url)} · {w.url}</p>
                           </div>
                         </Link>
 
-                        <div className="hidden md:block">
+                        <div className="block overflow-hidden">
                           <BeatStrip beats={history[w.id] || []} />
                         </div>
 
@@ -650,9 +990,112 @@ const data: Website[] = raw.map((site: ApiWebsite) => {
                 </ul>
               </div>
             </section>
+
+            {/* Recent incidents from the incident history endpoint */}
+            <section className="mt-10">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold tracking-tight text-white">
+                    Recent incidents
+                  </h2>
+                  <p className="mt-1 text-xs text-zinc-500">Downtime events across your monitors</p>
+                </div>
+                <span className="text-xs text-zinc-500">{recentIncidents.length} shown</span>
+              </div>
+
+              <div className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02]">
+                {recentIncidents.length === 0 ? (
+                  <div className="px-5 py-7 text-sm text-zinc-500">
+                    No incidents recorded. Your monitors are looking good.
+                  </div>
+                ) : (
+                  <ul className="divide-y divide-white/[0.06]">
+                    {recentIncidents.map((incident) => (
+                      <li key={incident.id} className="flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex min-w-0 items-start gap-3">
+                          <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${incident.resolvedAt ? "bg-emerald-400" : "bg-rose-400"}`} />
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-white">{incident.websiteName}</p>
+                            <p className="truncate text-xs text-zinc-500">{host(incident.websiteUrl)} · {new Date(incident.startedAt).toLocaleString()}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 pl-5 sm:pl-0">
+                          <span className={`text-xs font-medium ${incident.resolvedAt ? "text-emerald-300" : "text-rose-300"}`}>
+                            {incident.resolvedAt ? "Resolved" : "Ongoing"}
+                          </span>
+                          <span className="text-xs tabular-nums text-zinc-500">{formatIncidentDuration(incident)}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </section>
           </main>
         </div>
       </div>
+
+      {/* Ask for a mobile number only when the signed-in user has not added one. */}
+      <Dialog open={isMobileDialogOpen} onOpenChange={setIsMobileDialogOpen}>
+        <DialogContent className="w-[calc(100%-2rem)] max-w-[360px] rounded-2xl border border-white/[0.09] bg-[#0e1218] p-5 text-white shadow-2xl sm:p-6">
+          <DialogHeader className="space-y-2 text-left">
+            <div className="mb-1 grid h-10 w-10 place-items-center rounded-xl border border-emerald-400/15 bg-emerald-400/10 text-emerald-300">
+              <Bell className="h-[18px] w-[18px]" />
+            </div>
+            <DialogTitle className="font-[family-name:var(--font-display)] text-xl font-semibold tracking-tight text-white">
+              Get outage alerts
+            </DialogTitle>
+            <DialogDescription className="text-[13px] leading-5 text-zinc-400">
+              Add your mobile number to receive an SMS when one of your websites goes down.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleMobileSubmit} className="mt-3 space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="alertMobile" className="text-xs font-medium text-zinc-300">
+                Mobile number
+              </Label>
+              <div className="flex h-10 items-center rounded-lg border border-white/10 bg-white/[0.04] px-3 transition-colors focus-within:border-emerald-400/50">
+                <span className="mr-3 border-r border-white/10 pr-3 text-sm text-zinc-400">
+                  +91
+                </span>
+                <Input
+                  id="alertMobile"
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel-national"
+                  placeholder="98765 43210"
+                  value={mobileNumber}
+                  onChange={(e) => {
+                    setMobileNumber(e.target.value.replace(/\D/g, "").slice(0, 10));
+                    setMobileError("");
+                  }}
+                  maxLength={10}
+                  className="h-full border-0 bg-transparent px-0 text-sm text-white shadow-none placeholder:text-zinc-600 focus-visible:ring-0"
+                  aria-describedby={mobileError ? "alertMobileError" : undefined}
+                  required
+                />
+              </div>
+              {mobileError && (
+                <p id="alertMobileError" className="text-xs text-rose-400">
+                  {mobileError}
+                </p>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              disabled={mobileSaving || mobileNumber.length !== 10}
+              className="h-10 w-full rounded-lg bg-emerald-400 text-sm font-semibold text-[#04120c] hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {mobileSaving ? "Saving..." : "Enable SMS alerts"}
+            </Button>
+            <p className="text-center text-[11px] leading-4 text-zinc-500">
+              Used only for important website status notifications.
+            </p>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
