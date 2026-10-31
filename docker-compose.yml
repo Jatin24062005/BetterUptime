@@ -36,6 +36,7 @@ services:
       REDIS_HOST: redis
       API_HOST: api
       REDIS_URL: "rediss://default:AZcRAAIgcDE2YzZkODczZWFhYTM0ZjkzYmE2MTk1NzUyYTRlNjJkOQ@glad-monitor-38673.upstash.io:6379"
+      FAST2SMS_API_KEY: "h0wxjq5g1DXJVae7RfElL4py6YcB8AU2mFIuZrovziKG93WHSQU6bw7zaMyTEOoduP34jXHYxAqkDQvB"
 
     depends_on:
       - api

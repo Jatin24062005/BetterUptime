@@ -147,7 +147,7 @@ async function processWebsite(
 ) {
   const startTime = Date.now();
 
-  let status = WebsiteStatus.UP;
+  let status: WebsiteStatus = WebsiteStatus.UP;
   let responseTime: number | null = null;
   let errorMessage: string | null = null;
 

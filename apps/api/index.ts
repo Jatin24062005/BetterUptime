@@ -8,6 +8,7 @@ import { ExitStatus } from "typescript";
 import { startTransition } from "react";
 import { safeParse } from "zod";
 import cors from "cors"
+import bcrypt from "bcrypt";
 
 
 dotenv.config();
@@ -282,7 +283,7 @@ app.post("/user/signup", async (req, res) => {
     });
   }
 
-  const { username, password } = data.data;
+  const { username, password,name } = data.data;
 
   try {
     const user = await prismaClient.user.findFirst({
@@ -296,12 +297,14 @@ app.post("/user/signup", async (req, res) => {
       });
     }
 
-    const newUser = await prismaClient.user.create({
-      data: {
-        username,
-        password, // 🔐 hash this in real apps
-      },
-    });
+   const passwordHash = await bcrypt.hash(password, 12);
+
+const newUser = await prismaClient.user.create({
+  data: {
+    username,
+    passwordHash,
+  },
+});
     const token = jwt.sign(
     { id: newUser.id, username: newUser.username },
     process.env.JWT_SECRET!,
@@ -340,6 +343,12 @@ app.post("/user/signin", async (req, res) => {
 
     const user = await prismaClient.user.findUnique({
       where: { username },
+      select: {
+        id: true,
+        username: true,
+        mobile: true,
+        passwordHash: true,
+      },
     });
 
     if (!user) {
@@ -349,9 +358,7 @@ app.post("/user/signin", async (req, res) => {
       });
     }
 
-    // Retaining your existing password comparison.
-    // Replace with bcrypt.compare when password hashing is implemented.
-    if (user.password !== password) {
+    if (!(await bcrypt.compare(password, user.passwordHash))) {
       return res.status(401).json({
         status: "failed",
         message: "Incorrect password",
@@ -598,8 +605,8 @@ app.get(
   }
 );
 
-app.listen(process.env.PORT || 3000, () => {
+app.listen(process.env.PORT || 8080, () => {
   console.log(
-    `Server is running on http://localhost:${process.env.PORT || 5000}`
+    `Server is running on http://localhost:${process.env.PORT || 8080}`
   );
 });

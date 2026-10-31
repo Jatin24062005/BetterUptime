@@ -26,23 +26,23 @@ RUN bunx prisma generate
 # API service
 FROM base AS api
 WORKDIR /app/apps/api
-CMD ["bun", "run", "dev"]
+CMD ["bun", "run", "start"]
 
-# Worker service
-FROM base AS worker
-WORKDIR /app/apps/api/worker
-CMD ["bun", "run", "dev"]
+# # Worker service
+# FROM base AS worker
+# WORKDIR /app/apps/api/worker
+# CMD ["bun", "run", "dev"]
 
-# Pusher service
-FROM base AS pusher
-WORKDIR /app/apps/api/pusher
-CMD ["bun", "run", "dev"]
+# # Pusher service
+# FROM base AS pusher
+# WORKDIR /app/apps/api/pusher
+# CMD ["bun", "run", "dev"]
 
-# Frontend service
-FROM base AS frontend
-WORKDIR /app/apps/frontend
-CMD ["bun", "run", "dev"]
-Expose 3000
+# # Frontend service
+# FROM base AS frontend
+# WORKDIR /app/apps/frontend
+# CMD ["bun", "run", "dev"]
+# Expose 3000
 
 
 
