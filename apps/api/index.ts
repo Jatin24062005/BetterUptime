@@ -135,7 +135,7 @@ app.post("/website", authMiddleware, async (req, res) => {
   }
 
   const website = await prismaClient.website.create({
-    data: { url: req.body.url, timeAdded: new Date(), userId : req.userId!, name: req.body.name || req.body.url},
+    data: { url: req.body.url, timeAdded: new Date(), userId : req.userId!,name:req.body.name || req.body.url.split("//")[1].split("/")[0]},
   });
   res.status(201).json({
     message: "Website created successfully",

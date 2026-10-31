@@ -107,6 +107,7 @@ type ChartTick = {
   responseTime: number | null;
   status: Status;
   createdAt: string;
+  errorMessage?: string | null;
 };
 
 const panel = "rounded-2xl border border-white/[0.07] bg-white/[0.02]";
@@ -125,6 +126,16 @@ function normalizeStatus(value?: string): Status {
   if (status === "UP") return "UP";
   if (status === "DOWN") return "DOWN";
   return "UNKNOWN";
+}
+
+function getApiErrorMessage(error: unknown, fallback: string): string {
+  if (axios.isAxiosError<{ message?: unknown }>(error)) {
+    const message = error.response?.data?.message;
+    if (typeof message === "string" && message.trim()) return message;
+  }
+
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
 }
 
 function formatDuration(totalSeconds: number) {
@@ -293,12 +304,13 @@ export default function WebsiteDetailsPage() {
 
         setError("");
         setLastUpdated(new Date().toISOString());
-      } catch (loadError: any) {
+      } catch (loadError: unknown) {
         console.error("Website details request failed:", loadError);
         setError(
-          loadError?.response?.data?.message ||
-            loadError?.message ||
+          getApiErrorMessage(
+            loadError,
             "Unable to load website details. Please try again."
+          )
         );
       } finally {
         setLoading(false);
@@ -382,13 +394,6 @@ export default function WebsiteDetailsPage() {
   );
 
   const activeIncidents = incidents.filter((incident) => !incident.resolvedAt);
-  const host = (url: string) => {
-    try {
-      return new URL(url).hostname;
-    } catch {
-      return url;
-    }
-  };
   const protocol = (() => {
     try {
       return new URL(website?.url || "").protocol.replace(":", "").toUpperCase();
@@ -630,7 +635,22 @@ export default function WebsiteDetailsPage() {
                       <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
                       <XAxis dataKey="label" stroke="#52525b" fontSize={12} tickLine={false} axisLine={false} minTickGap={32} />
                       <YAxis stroke="#52525b" fontSize={12} tickLine={false} axisLine={false} unit="ms" />
-                      <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: "rgba(255,255,255,0.15)" }} formatter={(value: number | null) => [value == null ? "No successful response" : `${value} ms`, "Response time"]} labelFormatter={(_, payload) => payload?.[0]?.payload?.createdAt ? new Date(payload[0].payload.createdAt).toLocaleString() : ""} />
+                      <Tooltip
+                        contentStyle={tooltipStyle}
+                        cursor={{ stroke: "rgba(255,255,255,0.15)" }}
+                        formatter={(value) => {
+                          const raw = Array.isArray(value) ? value[0] : value;
+                          const numericValue = typeof raw === "number" ? raw : raw == null ? null : Number(raw);
+
+                          return [
+                            numericValue == null || Number.isNaN(numericValue)
+                              ? "No successful response"
+                              : `${numericValue} ms`,
+                            "Response time",
+                          ];
+                        }}
+                        labelFormatter={(_, payload) => payload?.[0]?.payload?.createdAt ? new Date(payload[0].payload.createdAt).toLocaleString() : ""}
+                      />
                       <Area type="monotone" dataKey="responseTime" connectNulls={false} stroke="#34d399" strokeWidth={2} fill="url(#responseTimeGradient)" activeDot={{ r: 5, fill: "#07090d", stroke: "#34d399", strokeWidth: 2 }} />
                     </AreaChart>
                   </ResponsiveContainer>

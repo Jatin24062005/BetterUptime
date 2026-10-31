@@ -135,6 +135,16 @@ const normalize = (s?: string): Status => {
   return "checking";
 };
 
+function getApiErrorMessage(error: unknown, fallback: string): string {
+  if (axios.isAxiosError<{ message?: unknown }>(error)) {
+    const message = error.response?.data?.message;
+    if (typeof message === "string" && message.trim()) return message;
+  }
+
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
+}
+
 // Render the latest 36 real checks as individual bars.
 // API results are usually newest-first; sort oldest-first so the newest tick
 // appears on the right, like a live monitoring timeline.
@@ -371,10 +381,10 @@ export default function DashboardPage() {
       toast.success("SMS alerts enabled", {
         description: "You'll receive an alert when a monitored website goes down.",
       });
-    } catch (error: any) {
-      const message =
-        error.response?.data?.message || "Couldn't save your number. Please try again.";
-      setMobileError(message);
+    } catch (error: unknown) {
+      setMobileError(
+        getApiErrorMessage(error, "Couldn't save your number. Please try again.")
+      );
     } finally {
       setMobileSaving(false);
     }
@@ -451,9 +461,11 @@ export default function DashboardPage() {
 
       setWebsites(data);
       setLoaded(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
       // The API currently responds with 404 when a user has no monitors.
-      if (error.response?.status !== 404) {
+      const isNoWebsitesResponse =
+        axios.isAxiosError(error) && error.response?.status === 404;
+      if (!isNoWebsitesResponse) {
         console.error("Error while fetching websites:", error);
       }
       setWebsites([]);
@@ -475,13 +487,14 @@ export default function DashboardPage() {
   );
 
   useEffect(() => {
-    if (!token || websites.length === 0) {
+    const siteMeta: { id: string; name: string; url: string }[] = JSON.parse(websiteMetaKey);
+
+    if (!token || siteMeta.length === 0) {
       setRecentIncidents([]);
       return;
     }
 
     let isActive = true;
-    const siteMeta: { id: string; name: string; url: string }[] = JSON.parse(websiteMetaKey);
 
     const loadIncidents = async () => {
       const incidentResults = await Promise.all(
@@ -551,9 +564,11 @@ export default function DashboardPage() {
       setWebsiteUrl("");
       setWebsiteName("");
       setIsAddWebsiteOpen(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to add website:", error);
-      toast.error(error.response?.data?.message || "Couldn't add the monitor. Check the name and URL.");
+      toast.error(
+        getApiErrorMessage(error, "Couldn't add the monitor. Check the name and URL.")
+      );
     }
   };
 
